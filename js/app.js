@@ -16,7 +16,7 @@ const ciudadesBase = {
     'posadas': [-27.3671, -55.8961], 'chaco': [-27.4516, -59.0234],
     'resistencia': [-27.4516, -59.0234], 'corrientes': [-27.4693, -58.8106],
     'formosa': [-26.1775, -58.1781], 'parana': [-31.7333, -60.5264],
-    ' Entre Rios': [-31.7333, -60.5264], 'san juan': [-31.5375, -68.5364],
+    'entre rios': [-31.7333, -60.5264], 'san juan': [-31.5375, -68.5364],
     'san luis': [-33.2950, -66.3453], 'la rioja': [-29.4167, -66.8500],
     'catamarca': [-28.4696, -65.7795], 'santiago del estero': [-27.7951, -64.2615],
     'jujuy': [-24.1880, -65.2995], 'neuquen': [-38.9516, -68.0591],
@@ -37,8 +37,8 @@ const ciudadesBase = {
     'tokio': [35.6762, 139.6503], 'pekin': [39.9042, 116.4074],
     'dubai': [25.2048, 55.2708], 'shanghai': [31.2304, 121.4737],
     'bangkok': [13.7563, 100.5018], 'singapur': [1.3521, 103.8198],
-    ' sidney': [-33.8688, 151.2093], 'mumbai': [19.0760, 72.8777],
-    'buenos aires': [-34.6037, -58.3816], 'capital federal': [-34.6037, -58.3816],
+    'sidney': [-33.8688, 151.2093], 'mumbai': [19.0760, 72.8777],
+    'capital federal': [-34.6037, -58.3816],
     'lanus': [-34.6989, -58.3926], 'avellaneda': [-34.6625, -58.3649],
     'quilmes': [-34.7263, -58.2548], 'la plata': [-34.9214, -57.9544],
     'moron': [-34.6537, -58.6198], 'san miguel': [-34.5437, -58.7123],
@@ -47,11 +47,11 @@ const ciudadesBase = {
 };
 
 function coordsParaCiudad(nombre) {
+    if (!nombre) return null;
     const lower = nombre.toLowerCase().trim();
     if (coordenadasCiudades[lower]) return coordenadasCiudades[lower];
     if (ciudadesBase[lower]) return ciudadesBase[lower];
-    const keys = Object.keys(ciudadesBase);
-    for (const key of keys) {
+    for (const key of Object.keys(ciudadesBase)) {
         if (lower.includes(key) || key.includes(lower)) return ciudadesBase[key];
     }
     return null;
@@ -78,7 +78,7 @@ function formatoTiempo(horas) {
 }
 
 async function obtenerRutaOSRM(origen, destino) {
-    const key = `${origen}-${destino}`;
+    const key = origen.toLowerCase().trim() + '|' + destino.toLowerCase().trim();
     if (distanciaCache[key]) return distanciaCache[key];
 
     const cOrigen = coordsParaCiudad(origen);
@@ -86,26 +86,28 @@ async function obtenerRutaOSRM(origen, destino) {
     if (!cOrigen || !cDestino) return null;
 
     try {
-        const url = `https://router.project-osrm.org/route/v1/driving/${cOrigen[1]},${cOrigen[0]};${cDestino[1]},${cDestino[0]}?overview=full&geometries=geojson`;
+        const url = 'https://router.project-osrm.org/route/v1/driving/'
+            + cOrigen[1] + ',' + cOrigen[0] + ';'
+            + cDestino[1] + ',' + cDestino[0]
+            + '?overview=full&geometries=geojson';
         const res = await fetch(url);
         const data = await res.json();
-        if (data.code === 'Ok' && data.routes.length > 0) {
-            const ruta = data.routes[0];
-            const resultado = {
+        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+            var ruta = data.routes[0];
+            var resultado = {
                 distancia: ruta.distance / 1000,
                 tiempo: ruta.time / 3600,
-                coordenadas: ruta.geometry.coordinates.map(c => [c[1], c[0]]),
+                coordenadas: ruta.geometry.coordinates.map(function(c) { return [c[1], c[0]]; }),
             };
             distanciaCache[key] = resultado;
             return resultado;
         }
     } catch (e) {}
 
-    const dist = distanciaHaversine(cOrigen, cDestino);
-    const velPromedio = 70;
-    const resultado = {
+    var dist = distanciaHaversine(cOrigen, cDestino);
+    var resultado = {
         distancia: dist,
-        tiempo: dist / velPromedio,
+        tiempo: dist / 70,
         coordenadas: [cOrigen, cDestino],
     };
     distanciaCache[key] = resultado;
@@ -114,12 +116,15 @@ async function obtenerRutaOSRM(origen, destino) {
 
 function initMapa() {
     if (mapa) return;
-    mapa = L.map('mapa', { zoomControl: true }).setView([-34.6037, -58.3816], 4);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap, &copy; CARTO',
-        maxZoom: 19,
-    }).addTo(mapa);
-    mapa.on('click', function() { deseleccionarRuta(); });
+    try {
+        mapa = L.map('mapa', { zoomControl: true }).setView([-34.6037, -58.3816], 4);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap, &copy; CARTO',
+            maxZoom: 19,
+        }).addTo(mapa);
+        mapa.on('click', function() { deseleccionarRuta(); });
+        setTimeout(function() { mapa.invalidateSize(); }, 200);
+    } catch (e) {}
 }
 
 function colorEstado(estado) {
@@ -129,10 +134,10 @@ function colorEstado(estado) {
 }
 
 function crearIcono(color) {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">
-        <path d="M16 0C7.16 0 0 7.16 0 16c0 12 16 26 16 26s16-14 16-26C32 7.16 24.84 0 16 0z" fill="${color}" stroke="#0f172a" stroke-width="2"/>
-        <circle cx="16" cy="16" r="7" fill="#0f172a"/>
-    </svg>`;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">'
+        + '<path d="M16 0C7.16 0 0 7.16 0 16c0 12 16 26 16 26s16-14 16-26C32 7.16 24.84 0 16 0z" fill="' + color + '" stroke="#0f172a" stroke-width="2"/>'
+        + '<circle cx="16" cy="16" r="7" fill="#0f172a"/>'
+        + '</svg>';
     return L.divIcon({
         html: svg,
         className: '',
@@ -149,10 +154,10 @@ function badgeColor(estado) {
 }
 
 function crearIconoOrigen() {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
-        <circle cx="14" cy="14" r="12" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
-        <text x="14" y="19" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">O</text>
-    </svg>`;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">'
+        + '<circle cx="14" cy="14" r="12" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>'
+        + '<text x="14" y="19" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">O</text>'
+        + '</svg>';
     return L.divIcon({
         html: svg,
         className: '',
@@ -165,151 +170,158 @@ function crearIconoOrigen() {
 function enfocarRuta(id) {
     if (!mapa) return;
 
-    Object.keys(rutasPolylines).forEach(key => {
-        const poly = rutasPolylines[key];
-        if (!poly) return;
-        if (Number(key) === id) return;
-        poly.setStyle({ weight: 2, opacity: 0.25 });
-    });
+    try {
+        Object.keys(rutasPolylines).forEach(function(key) {
+            var poly = rutasPolylines[key];
+            if (!poly) return;
+            if (Number(key) === id) return;
+            poly.setStyle({ weight: 2, opacity: 0.25 });
+        });
 
-    Object.keys(marcadores).forEach(key => {
-        if (String(key).includes('_origen')) return;
-        const m = marcadores[key];
-        if (!m) return;
-        if (Number(key) === id) return;
-        m.setOpacity(0.3);
-    });
+        Object.keys(marcadores).forEach(function(key) {
+            var m = marcadores[key];
+            if (!m) return;
+            if (Number(key) === id) { m.setOpacity(1); return; }
+            if (String(key).includes('_origen')) {
+                var envioId = Number(String(key).replace('_origen', ''));
+                if (envioId === id) { m.setOpacity(1); return; }
+            }
+            m.setOpacity(0.3);
+        });
 
-    const poly = rutasPolylines[id];
-    if (poly) {
-        poly.setStyle({ weight: 6, opacity: 1 });
-        poly.bringToFront();
-        mapa.fitBounds(poly.getBounds(), { padding: [50, 50], maxZoom: 8 });
-        rutaSeleccionada = id;
+        var poly = rutasPolylines[id];
+        if (poly) {
+            poly.setStyle({ weight: 6, opacity: 1 });
+            poly.bringToFront();
+            mapa.fitBounds(poly.getBounds(), { padding: [50, 50], maxZoom: 8 });
+            rutaSeleccionada = id;
 
-        const envio = envios.find(e => e.id === id);
-        if (envio && marcadores[id]) {
-            marcadores[id].openPopup();
+            if (marcadores[id]) {
+                marcadores[id].openPopup();
+            }
+        } else {
+            if (marcadores[id]) {
+                mapa.setView(marcadores[id].getLatLng(), 6);
+                marcadores[id].openPopup();
+            }
         }
 
-        if (envio && envio.origen && marcadores[id + '_origen']) {
-            marcadores[id + '_origen'].setOpacity(1);
+        var panel = document.getElementById('mapa');
+        if (panel) {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-    }
+    } catch (e) {}
 }
 
 function deseleccionarRuta() {
     if (!mapa || rutaSeleccionada === null) return;
 
-    Object.keys(rutasPolylines).forEach(key => {
-        const poly = rutasPolylines[key];
-        if (!poly) return;
-        const envio = envios.find(e => e.id === Number(key));
-        if (envio) {
-            const w = envio.estado === 'En Transito' ? 4 : 3;
-            poly.setStyle({ weight: w, opacity: 0.8 });
-        }
-    });
+    try {
+        Object.keys(rutasPolylines).forEach(function(key) {
+            var poly = rutasPolylines[key];
+            if (!poly) return;
+            var envio = envios.find(function(e) { return e.id === Number(key); });
+            if (envio) {
+                var w = envio.estado === 'En Transito' ? 4 : 3;
+                poly.setStyle({ weight: w, opacity: 0.8 });
+            }
+        });
 
-    Object.keys(marcadores).forEach(key => {
-        if (String(key).includes('_origen')) {
-            marcadores[key].setOpacity(1);
-        } else {
-            marcadores[key].setOpacity(1);
-        }
-    });
+        Object.keys(marcadores).forEach(function(key) {
+            if (marcadores[key]) marcadores[key].setOpacity(1);
+        });
 
-    rutaSeleccionada = null;
+        rutaSeleccionada = null;
+    } catch (e) {}
 }
 
 async function renderMapa() {
     if (!mapa) return;
 
-    Object.values(marcadores).forEach(m => mapa.removeLayer(m));
-    Object.values(rutasPolylines).forEach(p => mapa.removeLayer(p));
-    marcadores = {};
-    rutasPolylines = {};
+    try {
+        Object.values(marcadores).forEach(function(m) { mapa.removeLayer(m); });
+        Object.values(rutasPolylines).forEach(function(p) { mapa.removeLayer(p); });
+        marcadores = {};
+        rutasPolylines = {};
 
-    const enviosConCoords = envios.filter(e => {
-        const cDestino = coordsParaCiudad(e.destino);
-        if (cDestino) coordenadasCiudades[e.destino.toLowerCase().trim()] = cDestino;
-        if (e.origen) {
-            const cOrigen = coordsParaCiudad(e.origen);
-            if (cOrigen) coordenadasCiudades[e.origen.toLowerCase().trim()] = cOrigen;
-        }
-        return cDestino !== null;
-    });
+        var enviosConCoords = envios.filter(function(e) {
+            var cDestino = coordsParaCiudad(e.destino);
+            if (cDestino) coordenadasCiudades[e.destino.toLowerCase().trim()] = cDestino;
+            if (e.origen) {
+                var cOrigen = coordsParaCiudad(e.origen);
+                if (cOrigen) coordenadasCiudades[e.origen.toLowerCase().trim()] = cOrigen;
+            }
+            return cDestino !== null;
+        });
 
-    const todosCoords = [];
+        var todosCoords = [];
 
-    for (const e of enviosConCoords) {
-        const coordsDestino = coordsParaCiudad(e.destino);
-        const color = colorEstado(e.estado);
+        for (var i = 0; i < enviosConCoords.length; i++) {
+            var e = enviosConCoords[i];
+            var coordsDestino = coordsParaCiudad(e.destino);
+            var color = colorEstado(e.estado);
 
-        const markerDestino = L.marker(coordsDestino, { icon: crearIcono(color) }).addTo(mapa);
-        let popupHtml = `
-            <div class="popup-destino">${e.destino}</div>
-            <div class="popup-info">Producto: ${e.producto}</div>
-            <div class="popup-info">Cantidad: ${e.cantidad} uds</div>
-            <div class="popup-info">Peso: ${e.peso} kg</div>
-            <span class="popup-estado" style="${badgeColor(e.estado)}">${e.estado}</span>
-        `;
-        markerDestino.bindPopup(popupHtml);
-        marcadores[e.id] = markerDestino;
-        todosCoords.push(coordsDestino);
+            var markerDestino = L.marker(coordsDestino, { icon: crearIcono(color) }).addTo(mapa);
+            var popupHtml = '<div class="popup-destino">' + e.destino + '</div>'
+                + '<div class="popup-info">Producto: ' + e.producto + '</div>'
+                + '<div class="popup-info">Cantidad: ' + e.cantidad + ' uds</div>'
+                + '<div class="popup-info">Peso: ' + e.peso + ' kg</div>'
+                + '<span class="popup-estado" style="' + badgeColor(e.estado) + '">' + e.estado + '</span>';
+            markerDestino.bindPopup(popupHtml);
+            marcadores[e.id] = markerDestino;
+            todosCoords.push(coordsDestino);
 
-        if (e.origen) {
-            const coordsOrigen = coordsParaCiudad(e.origen);
-            if (coordsOrigen) {
-                const markerOrigen = L.marker(coordsOrigen, { icon: crearIconoOrigen() }).addTo(mapa);
-                markerOrigen.bindPopup(`<div class="popup-destino" style="color:#38bdf8">Origen: ${e.origen}</div>`);
-                marcadores[e.id + '_origen'] = markerOrigen;
-                todosCoords.push(coordsOrigen);
+            if (e.origen) {
+                var coordsOrigen = coordsParaCiudad(e.origen);
+                if (coordsOrigen) {
+                    var markerOrigen = L.marker(coordsOrigen, { icon: crearIconoOrigen() }).addTo(mapa);
+                    markerOrigen.bindPopup('<div class="popup-destino" style="color:#38bdf8">Origen: ' + e.origen + '</div>');
+                    marcadores[e.id + '_origen'] = markerOrigen;
+                    todosCoords.push(coordsOrigen);
 
-                const ruta = await obtenerRutaOSRM(e.origen, e.destino);
-                if (ruta) {
-                    e._distancia = ruta.distancia;
-                    e._tiempo = ruta.tiempo;
+                    var ruta = await obtenerRutaOSRM(e.origen, e.destino);
+                    if (ruta) {
+                        e._distancia = ruta.distancia;
+                        e._tiempo = ruta.tiempo;
 
-                    const lineaColor = e.estado === 'En Transito' ? '#a78bfa' : e.estado === 'Pendiente' ? '#fbbf24' : '#34d399';
-                    const polyline = L.polyline(ruta.coordenadas, {
-                        color: lineaColor,
-                        weight: e.estado === 'En Transito' ? 4 : 3,
-                        opacity: 0.8,
-                        dashArray: e.estado === 'Pendiente' ? '8, 8' : null,
-                    }).addTo(mapa);
-                    rutasPolylines[e.id] = polyline;
+                        var lineaColor = e.estado === 'En Transito' ? '#a78bfa' : e.estado === 'Pendiente' ? '#fbbf24' : '#34d399';
+                        var polyline = L.polyline(ruta.coordenadas, {
+                            color: lineaColor,
+                            weight: e.estado === 'En Transito' ? 4 : 3,
+                            opacity: 0.8,
+                            dashArray: e.estado === 'Pendiente' ? '8, 8' : null,
+                        }).addTo(mapa);
+                        rutasPolylines[e.id] = polyline;
 
-                    popupHtml += `
-                        <div class="popup-ruta">
-                            <div class="popup-distancia">${formatoDistancia(ruta.distancia)}</div>
-                            <div class="popup-tiempo">Est. ${formatoTiempo(ruta.tiempo)} - ${e.origen}</div>
-                        </div>
-                    `;
-                    markerDestino.setPopupContent(popupHtml);
+                        popupHtml += '<div class="popup-ruta">'
+                            + '<div class="popup-distancia">' + formatoDistancia(ruta.distancia) + '</div>'
+                            + '<div class="popup-tiempo">Est. ' + formatoTiempo(ruta.tiempo) + ' - ' + e.origen + '</div>'
+                            + '</div>';
+                        markerDestino.setPopupContent(popupHtml);
+                    }
                 }
             }
         }
-    }
 
-    if (todosCoords.length > 0) {
-        const grupo = L.featureGroup(todosCoords.map(c => L.marker(c)));
-        mapa.fitBounds(grupo.getBounds().pad(0.15));
-    }
+        if (todosCoords.length > 0) {
+            var grupo = L.featureGroup(todosCoords.map(function(c) { return L.marker(c); }));
+            mapa.fitBounds(grupo.getBounds().pad(0.15));
+        }
 
-    actualizarRastreoTiempoReal();
+        actualizarRastreoTiempoReal();
+    } catch (e) {}
 }
 
-let simulacionInterval = null;
-const posicionesSimuladas = {};
+var simulacionInterval = null;
+var posicionesSimuladas = {};
 
 function actualizarRastreoTiempoReal() {
     if (simulacionInterval) clearInterval(simulacionInterval);
 
-    const enTransito = envios.filter(e => e.estado === 'En Transito' && coordsParaCiudad(e.destino));
+    var enTransito = envios.filter(function(e) { return e.estado === 'En Transito' && coordsParaCiudad(e.destino); });
 
-    enTransito.forEach(e => {
-        const destino = coordsParaCiudad(e.destino);
+    enTransito.forEach(function(e) {
+        var destino = coordsParaCiudad(e.destino);
         if (!posicionesSimuladas[e.id]) {
             posicionesSimuladas[e.id] = {
                 lat: destino[0] + (Math.random() - 0.5) * 5,
@@ -318,15 +330,13 @@ function actualizarRastreoTiempoReal() {
         }
     });
 
-    simulacionInterval = setInterval(() => {
-        enTransito.forEach(e => {
-            const destino = coordsParaCiudad(e.destino);
-            const pos = posicionesSimuladas[e.id];
+    simulacionInterval = setInterval(function() {
+        enTransito.forEach(function(e) {
+            var destino = coordsParaCiudad(e.destino);
+            var pos = posicionesSimuladas[e.id];
             if (!pos || !marcadores[e.id]) return;
-
             pos.lat += (destino[0] - pos.lat) * 0.08 + (Math.random() - 0.5) * 0.15;
             pos.lng += (destino[1] - pos.lng) * 0.08 + (Math.random() - 0.5) * 0.15;
-
             marcadores[e.id].setLatLng([pos.lat, pos.lng]);
         });
     }, 2000);
@@ -338,20 +348,15 @@ function guardar() {
 }
 
 function fechaActual() {
-    const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    var opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     return new Date().toLocaleDateString('es-ES', opciones);
 }
 
 function actualizarKPIs() {
-    const total = envios.length;
-    const pendientes = envios.filter(e => e.estado === 'Pendiente').length;
-    const transito = envios.filter(e => e.estado === 'En Transito').length;
-    const entregados = envios.filter(e => e.estado === 'Entregado').length;
-
-    document.getElementById('kpi-total').textContent = total;
-    document.getElementById('kpi-pendiente').textContent = pendientes;
-    document.getElementById('kpi-transito').textContent = transito;
-    document.getElementById('kpi-entregado').textContent = entregados;
+    document.getElementById('kpi-total').textContent = envios.length;
+    document.getElementById('kpi-pendiente').textContent = envios.filter(function(e) { return e.estado === 'Pendiente'; }).length;
+    document.getElementById('kpi-transito').textContent = envios.filter(function(e) { return e.estado === 'En Transito'; }).length;
+    document.getElementById('kpi-entregado').textContent = envios.filter(function(e) { return e.estado === 'Entregado'; }).length;
 }
 
 function claseBadge(estado) {
@@ -361,84 +366,81 @@ function claseBadge(estado) {
 }
 
 function renderTabla() {
-    const tbody = document.getElementById('tabla-envios');
+    var tbody = document.getElementById('tabla-envios');
     if (envios.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#475569;padding:2rem;">No hay envios registrados</td></tr>';
         return;
     }
-    tbody.innerHTML = envios.map(e => {
-        const dist = e._distancia ? formatoDistancia(e._distancia) : '-';
-        const tieneRuta = e.origen && coordsParaCiudad(e.origen) && coordsParaCiudad(e.destino);
-        return `
-        <tr>
-            <td>#${String(e.id).padStart(4, '0')}</td>
-            <td>${e.origen || '-'}</td>
-            <td>${e.destino}</td>
-            <td><span class="distancia-badge">${dist}</span></td>
-            <td>${e.producto}</td>
-            <td>${e.cantidad}</td>
-            <td>${e.peso} kg</td>
-            <td><span class="badge ${claseBadge(e.estado)}">${e.estado}</span></td>
-            <td class="acciones">
-                ${tieneRuta ? `<button class="btn-sm btn-detalle" onclick="enfocarRuta(${e.id})">Detalle</button>` : ''}
-                <button class="btn-sm" onclick="cambiarEstado(${e.id})">Cambiar</button>
-                <button class="btn-sm eliminar" onclick="eliminarEnvio(${e.id})">X</button>
-            </td>
-        </tr>`;
+    tbody.innerHTML = envios.map(function(e) {
+        var dist = e._distancia ? formatoDistancia(e._distancia) : '-';
+        var tieneRuta = e.origen && coordsParaCiudad(e.origen) && coordsParaCiudad(e.destino);
+        return '<tr>'
+            + '<td>#' + String(e.id).padStart(4, '0') + '</td>'
+            + '<td>' + (e.origen || '-') + '</td>'
+            + '<td>' + e.destino + '</td>'
+            + '<td><span class="distancia-badge">' + dist + '</span></td>'
+            + '<td>' + e.producto + '</td>'
+            + '<td>' + e.cantidad + '</td>'
+            + '<td>' + e.peso + ' kg</td>'
+            + '<td><span class="badge ' + claseBadge(e.estado) + '">' + e.estado + '</span></td>'
+            + '<td class="acciones">'
+            + (tieneRuta ? '<button class="btn-sm btn-detalle" onclick="enfocarRuta(' + e.id + ')">Detalle</button>' : '')
+            + '<button class="btn-sm" onclick="cambiarEstado(' + e.id + ')">Cambiar</button>'
+            + '<button class="btn-sm eliminar" onclick="eliminarEnvio(' + e.id + ')">X</button>'
+            + '</td></tr>';
     }).join('');
 }
 
 function renderGrafico() {
-    const contenedor = document.getElementById('grafico-barras');
-    const pendientes = envios.filter(e => e.estado === 'Pendiente').length;
-    const transito = envios.filter(e => e.estado === 'En Transito').length;
-    const entregados = envios.filter(e => e.estado === 'Entregado').length;
-    const maximo = Math.max(pendientes, transito, entregados, 1);
+    var contenedor = document.getElementById('grafico-barras');
+    var pendientes = envios.filter(function(e) { return e.estado === 'Pendiente'; }).length;
+    var transito = envios.filter(function(e) { return e.estado === 'En Transito'; }).length;
+    var entregados = envios.filter(function(e) { return e.estado === 'Entregado'; }).length;
+    var maximo = Math.max(pendientes, transito, entregados, 1);
 
-    const barras = [
+    var barras = [
         { label: 'Pendiente', valor: pendientes, color: '#fbbf24' },
         { label: 'Transito', valor: transito, color: '#a78bfa' },
         { label: 'Entregado', valor: entregados, color: '#34d399' },
     ];
 
-    contenedor.innerHTML = barras.map(b => `
-        <div class="barra-container">
-            <div class="barra-valor" style="color:${b.color}">${b.valor}</div>
-            <div class="barra" style="height:${(b.valor / maximo) * 120}px;background:${b.color}"></div>
-            <div class="barra-label">${b.label}</div>
-        </div>
-    `).join('');
+    contenedor.innerHTML = barras.map(function(b) {
+        return '<div class="barra-container">'
+            + '<div class="barra-valor" style="color:' + b.color + '">' + b.valor + '</div>'
+            + '<div class="barra" style="height:' + (b.valor / maximo) * 120 + 'px;background:' + b.color + '"></div>'
+            + '<div class="barra-label">' + b.label + '</div>'
+            + '</div>';
+    }).join('');
 }
 
 function renderRutas() {
-    const contenedor = document.getElementById('lista-rutas');
-    const activos = envios.filter(e => e.estado === 'En Transito');
+    var contenedor = document.getElementById('lista-rutas');
+    var activos = envios.filter(function(e) { return e.estado === 'En Transito'; });
     if (activos.length === 0) {
         contenedor.innerHTML = '<div style="color:#475569;font-size:0.85rem;padding:1rem 0;">Sin rutas activas</div>';
         return;
     }
-    contenedor.innerHTML = activos.slice(0, 5).map(e => {
-        const dist = e._distancia ? formatoDistancia(e._distancia) : '';
-        return `
-        <div class="ruta ruta-clickable" onclick="enfocarRuta(${e.id})">
-            <div class="ruta-dot" style="background:#a78bfa"></div>
-            <span class="ruta-destino">${e.origen || '?'} → ${e.destino}</span>
-            <span class="ruta-fecha">${dist}</span>
-        </div>`;
+    contenedor.innerHTML = activos.slice(0, 5).map(function(e) {
+        var dist = e._distancia ? formatoDistancia(e._distancia) : '';
+        return '<div class="ruta ruta-clickable" onclick="enfocarRuta(' + e.id + ')">'
+            + '<div class="ruta-dot" style="background:#a78bfa"></div>'
+            + '<span class="ruta-destino">' + (e.origen || '?') + ' &rarr; ' + e.destino + '</span>'
+            + '<span class="ruta-fecha">' + dist + '</span>'
+            + '</div>';
     }).join('');
 }
 
-async function render() {
+function render() {
     actualizarKPIs();
     renderTabla();
     renderGrafico();
     renderRutas();
-    await renderMapa();
+    renderMapa();
 }
 
 document.getElementById('form-envio').addEventListener('submit', function(e) {
     e.preventDefault();
-    const envio = {
+    var envio = {
         id: contadorId++,
         origen: document.getElementById('origen').value.trim(),
         destino: document.getElementById('destino').value.trim(),
@@ -454,17 +456,17 @@ document.getElementById('form-envio').addEventListener('submit', function(e) {
 });
 
 function cambiarEstado(id) {
-    const envio = envios.find(e => e.id === id);
+    var envio = envios.find(function(e) { return e.id === id; });
     if (!envio) return;
-    const estados = ['Pendiente', 'En Transito', 'Entregado'];
-    const idx = estados.indexOf(envio.estado);
+    var estados = ['Pendiente', 'En Transito', 'Entregado'];
+    var idx = estados.indexOf(envio.estado);
     envio.estado = estados[(idx + 1) % estados.length];
     guardar();
     render();
 }
 
 function eliminarEnvio(id) {
-    envios = envios.filter(e => e.id !== id);
+    envios = envios.filter(function(e) { return e.id !== id; });
     guardar();
     render();
 }
