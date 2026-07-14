@@ -1,5 +1,12 @@
-let envios = JSON.parse(localStorage.getItem('envios')) || [];
-let contadorId = parseInt(localStorage.getItem('contadorId')) || 1;
+var envios = [];
+var contadorId = 1;
+
+try {
+    var _saved = localStorage.getItem('envios');
+    if (_saved) envios = JSON.parse(_saved);
+    var _savedId = localStorage.getItem('contadorId');
+    if (_savedId) contadorId = parseInt(_savedId);
+} catch (e) {}
 
 let mapa = null;
 let marcadores = {};
@@ -343,8 +350,10 @@ function actualizarRastreoTiempoReal() {
 }
 
 function guardar() {
-    localStorage.setItem('envios', JSON.stringify(envios));
-    localStorage.setItem('contadorId', contadorId);
+    try {
+        localStorage.setItem('envios', JSON.stringify(envios));
+        localStorage.setItem('contadorId', contadorId);
+    } catch (e) {}
 }
 
 function fechaActual() {
