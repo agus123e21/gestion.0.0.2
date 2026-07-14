@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestion</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+        header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #334155; }
+        header h1 { font-size: 1.4rem; color: #34d399; }
+        header span { color: #64748b; font-size: 0.85rem; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+
+        .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .kpi { background: #1e293b; border-radius: 10px; padding: 1.2rem; border: 1px solid #334155; text-align: center; }
+        .kpi h3 { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; }
+        .kpi .valor { font-size: 2rem; font-weight: 700; }
+        .kpi.c1 .valor { color: #38bdf8; }
+        .kpi.c2 .valor { color: #fbbf24; }
+        .kpi.c3 .valor { color: #a78bfa; }
+        .kpi.c4 .valor { color: #34d399; }
+        .kpi.c5 .valor { color: #fb7185; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+
+        .panel { background: #1e293b; border-radius: 10px; padding: 1.5rem; border: 1px solid #334155; }
+        .panel h2 { font-size: 1rem; color: #94a3b8; margin-bottom: 1rem; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; }
+        .panel-full { grid-column: 1 / -1; }
+
+        form { display: flex; flex-direction: column; gap: 0.8rem; }
+        form label { font-size: 0.8rem; color: #64748b; }
+        form input, form select, form textarea { background: #0f172a; border: 1px solid #334155; color: #e2e8f0; padding: 0.6rem; border-radius: 6px; font-size: 0.9rem; font-family: inherit; }
+        form input:focus, form select:focus, form textarea:focus { outline: none; border-color: #34d399; }
+        form textarea { resize: vertical; min-height: 60px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+        .btn { background: #34d399; color: #0f172a; border: none; padding: 0.7rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+        .btn:hover { background: #6ee7b7; }
+        .btn-sec { background: #334155; color: #94a3b8; }
+
+        .kanban { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        @media (max-width: 768px) { .kanban { grid-template-columns: 1fr; } }
+        .kanban-col { background: #0f172a; border-radius: 8px; padding: 0.8rem; min-height: 200px; }
+        .kanban-col h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; padding-bottom: 0.4rem; border-bottom: 2px solid; }
+        .kanban-col.todo h3 { color: #64748b; border-color: #64748b; }
+        .kanban-col.progreso h3 { color: #fbbf24; border-color: #fbbf24; }
+        .kanban-col.hecho h3 { color: #34d399; border-color: #34d399; }
+
+        .tarea { background: #1e293b; border-radius: 6px; padding: 0.8rem; margin-bottom: 0.5rem; border-left: 3px solid #334155; }
+        .tarea h4 { font-size: 0.9rem; margin-bottom: 0.3rem; }
+        .tarea p { font-size: 0.75rem; color: #64748b; margin-bottom: 0.4rem; }
+        .tarea-footer { display: flex; justify-content: space-between; align-items: center; }
+        .tarea-prioridad { font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 10px; }
+        .prioridad-alta { background: #991b1b; color: #fca5a5; }
+        .prioridad-media { background: #78350f; color: #fbbf24; }
+        .prioridad-baja { background: #064e3b; color: #34d399; }
+        .tarea-acciones { display: flex; gap: 0.3rem; }
+        .btn-tiny { background: none; border: none; color: #64748b; cursor: pointer; font-size: 0.75rem; padding: 0.2rem; }
+        .btn-tiny:hover { color: #e2e8f0; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; font-size: 0.75rem; color: #64748b; text-transform: uppercase; padding: 0.6rem; border-bottom: 1px solid #334155; }
+        td { padding: 0.6rem; font-size: 0.85rem; border-bottom: 1px solid #1e293b; }
+        tr:hover td { background: #334155; }
+        .badge { padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .b-alta { background: #991b1b; color: #fca5a5; }
+        .b-media { background: #78350f; color: #fbbf24; }
+        .b-baja { background: #064e3b; color: #34d399; }
+
+        .actividad { max-height: 250px; overflow-y: auto; }
+        .actividad::-webkit-scrollbar { width: 6px; }
+        .actividad::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .act-item { display: flex; gap: 0.8rem; padding: 0.6rem 0; border-bottom: 1px solid #334155; font-size: 0.85rem; }
+        .act-item:last-child { border-bottom: none; }
+        .act-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 0.35rem; flex-shrink: 0; }
+        .act-texto { color: #94a3b8; }
+        .act-fecha { color: #475569; font-size: 0.75rem; margin-top: 0.2rem; }
+
+        .chart-donut { display: flex; align-items: center; justify-content: center; gap: 2rem; padding: 1rem; }
+        .donut { width: 120px; height: 120px; border-radius: 50%; position: relative; }
+        .donut-leyenda { display: flex; flex-direction: column; gap: 0.5rem; }
+        .leyenda-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #94a3b8; }
+        .leyenda-color { width: 12px; height: 12px; border-radius: 3px; }
+
+        footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Sistema de Gestion</h1>
+        <span id="fecha-actual"></span>
+    </header>
+
+    <div class="container">
+        <div class="kpis">
+            <div class="kpi c1"><h3>Total Tareas</h3><div class="valor" id="kpi-total">0</div></div>
+            <div class="kpi c2"><h3>Pendientes</h3><div class="valor" id="kpi-pendientes">0</div></div>
+            <div class="kpi c3"><h3>En Progreso</h3><div class="valor" id="kpi-progreso">0</div></div>
+            <div class="kpi c4"><h3>Completadas</h3><div class="valor" id="kpi-completadas">0</div></div>
+            <div class="kpi c5"><h3>Urgentes</h3><div class="valor" id="kpi-urgentes">0</div></div>
+        </div>
+
+        <div class="grid">
+            <div class="panel">
+                <h2>Nueva Tarea</h2>
+                <form id="form-tarea">
+                    <label>Titulo</label>
+                    <input type="text" id="titulo" placeholder="Nombre de la tarea" required>
+                    <label>Descripcion</label>
+                    <textarea id="descripcion" placeholder="Detalle de la tarea"></textarea>
+                    <div class="form-row">
+                        <div>
+                            <label>Prioridad</label>
+                            <select id="prioridad">
+                                <option value="Baja">Baja</option>
+                                <option value="Media" selected>Media</option>
+                                <option value="Alta">Alta</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Responsable</label>
+                            <input type="text" id="responsable" placeholder="Nombre">
+                        </div>
+                    </div>
+                    <label>Estado</label>
+                    <select id="estado">
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="En Progreso">En Progreso</option>
+                        <option value="Completada">Completada</option>
+                    </select>
+                    <button type="submit" class="btn">Crear Tarea</button>
+                </form>
+            </div>
+
+            <div class="panel">
+                <h2>Distribucion por Prioridad</h2>
+                <div class="chart-donut">
+                    <div class="donut" id="donut-chart"></div>
+                    <div class="donut-leyenda" id="donut-leyenda"></div>
+                </div>
+            </div>
+
+            <div class="panel panel-full">
+                <h2>Tablero Kanban</h2>
+                <div class="kanban">
+                    <div class="kanban-col todo">
+                        <h3>Pendiente</h3>
+                        <div id="kanban-pendiente"></div>
+                    </div>
+                    <div class="kanban-col progreso">
+                        <h3>En Progreso</h3>
+                        <div id="kanban-progreso"></div>
+                    </div>
+                    <div class="kanban-col hecho">
+                        <h3>Completada</h3>
+                        <div id="kanban-completada"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>Actividad Reciente</h2>
+                <div class="actividad" id="lista-actividad"></div>
+            </div>
+
+            <div class="panel">
+                <h2>Historial de Tareas</h2>
+                <div style="max-height:250px;overflow-y:auto;">
+                    <table>
+                        <thead><tr><th>Tarea</th><th>Responsable</th><th>Prioridad</th><th>Estado</th><th></th></tr></thead>
+                        <tbody id="tabla-historial"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>Sistema de Gestion v1.0</footer>
+
+    <script>
+        let tareas = JSON.parse(localStorage.getItem('tareas')) || [];
+        let actividad = JSON.parse(localStorage.getItem('actividad')) || [];
+        let contadorId = parseInt(localStorage.getItem('gestionId')) || 1;
+
+        function guardar() {
+            localStorage.setItem('tareas', JSON.stringify(tareas));
+            localStorage.setItem('actividad', JSON.stringify(actividad));
+            localStorage.setItem('gestionId', contadorId);
+        }
+
+        function agregarActividad(texto, color) {
+            actividad.unshift({ texto, color, fecha: new Date().toLocaleString('es-ES') });
+            if (actividad.length > 20) actividad.pop();
+        }
+
+        function fechaActual() {
+            return new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+
+        function actualizarKPIs() {
+            const total = tareas.length;
+            const pendientes = tareas.filter(t => t.estado === 'Pendiente').length;
+            const progreso = tareas.filter(t => t.estado === 'En Progreso').length;
+            const completadas = tareas.filter(t => t.estado === 'Completada').length;
+            const urgentes = tareas.filter(t => t.prioridad === 'Alta' && t.estado !== 'Completada').length;
+
+            document.getElementById('kpi-total').textContent = total;
+            document.getElementById('kpi-pendientes').textContent = pendientes;
+            document.getElementById('kpi-progreso').textContent = progreso;
+            document.getElementById('kpi-completadas').textContent = completadas;
+            document.getElementById('kpi-urgentes').textContent = urgentes;
+        }
+
+        function clasePrioridad(p) {
+            if (p === 'Alta') return 'prioridad-alta';
+            if (p === 'Media') return 'prioridad-media';
+            return 'prioridad-baja';
+        }
+
+        function badgePrioridad(p) {
+            if (p === 'Alta') return 'b-alta';
+            if (p === 'Media') return 'b-media';
+            return 'b-baja';
+        }
+
+        function renderKanban() {
+            const crear = (t) => `
+                <div class="tarea">
+                    <h4>${t.titulo}</h4>
+                    <p>${t.responsable || 'Sin asignar'}</p>
+                    <div class="tarea-footer">
+                        <span class="tarea-prioridad ${clasePrioridad(t.prioridad)}">${t.prioridad}</span>
+                        <div class="tarea-acciones">
+                            <button class="btn-tiny" onclick="avanzarTarea(${t.id})" title="Avanzar">&#9654;</button>
+                            <button class="btn-tiny" onclick="eliminarTarea(${t.id})" title="Eliminar">&#10005;</button>
+                        </div>
+                    </div>
+                </div>`;
+
+            document.getElementById('kanban-pendiente').innerHTML = tareas.filter(t => t.estado === 'Pendiente').map(crear).join('');
+            document.getElementById('kanban-progreso').innerHTML = tareas.filter(t => t.estado === 'En Progreso').map(crear).join('');
+            document.getElementById('kanban-completada').innerHTML = tareas.filter(t => t.estado === 'Completada').map(crear).join('');
+        }
+
+        function renderTabla() {
+            const tbody = document.getElementById('tabla-historial');
+            if (tareas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#475569;padding:1rem;">Sin tareas</td></tr>';
+                return;
+            }
+            tbody.innerHTML = tareas.slice().reverse().slice(0, 10).map(t => `
+                <tr>
+                    <td>${t.titulo}</td>
+                    <td>${t.responsable || '-'}</td>
+                    <td><span class="badge ${badgePrioridad(t.prioridad)}">${t.prioridad}</span></td>
+                    <td>${t.estado}</td>
+                    <td><button class="btn-tiny" onclick="eliminarTarea(${t.id})" style="color:#fb7185;">&#10005;</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function renderActividad() {
+            const el = document.getElementById('lista-actividad');
+            if (actividad.length === 0) {
+                el.innerHTML = '<div style="color:#475569;font-size:0.85rem;padding:1rem 0;">Sin actividad reciente</div>';
+                return;
+            }
+            el.innerHTML = actividad.map(a => `
+                <div class="act-item">
+                    <div class="act-dot" style="background:${a.color}"></div>
+                    <div>
+                        <div class="act-texto">${a.texto}</div>
+                        <div class="act-fecha">${a.fecha}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderDonut() {
+            const alta = tareas.filter(t => t.prioridad === 'Alta').length;
+            const media = tareas.filter(t => t.prioridad === 'Media').length;
+            const baja = tareas.filter(t => t.prioridad === 'Baja').length;
+            const total = alta + media + baja || 1;
+
+            const pAlta = (alta / total) * 360;
+            const pMedia = (media / total) * 360;
+            const pBaja = (baja / total) * 360;
+
+            const donut = document.getElementById('donut-chart');
+            donut.style.background = `conic-gradient(#fb7185 0deg ${pAlta}deg, #fbbf24 ${pAlta}deg ${pAlta + pMedia}deg, #34d399 ${pAlta + pMedia}deg 360deg)`;
+            donut.innerHTML = '<div style="position:absolute;inset:25%;background:#1e293b;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;">' + tareas.length + '</div>';
+
+            document.getElementById('donut-leyenda').innerHTML = `
+                <div class="leyenda-item"><div class="leyenda-color" style="background:#fb7185"></div>Alta: ${alta}</div>
+                <div class="leyenda-item"><div class="leyenda-color" style="background:#fbbf24"></div>Media: ${media}</div>
+                <div class="leyenda-item"><div class="leyenda-color" style="background:#34d399"></div>Baja: ${baja}</div>
+            `;
+        }
+
+        function render() {
+            actualizarKPIs();
+            renderKanban();
+            renderTabla();
+            renderActividad();
+            renderDonut();
+        }
+
+        document.getElementById('form-tarea').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const tarea = {
+                id: contadorId++,
+                titulo: document.getElementById('titulo').value.trim(),
+                descripcion: document.getElementById('descripcion').value.trim(),
+                prioridad: document.getElementById('prioridad').value,
+                responsable: document.getElementById('responsable').value.trim(),
+                estado: document.getElementById('estado').value,
+            };
+            tareas.push(tarea);
+            agregarActividad(`Tarea creada: "${tarea.titulo}"`, '#38bdf8');
+            guardar();
+            render();
+            this.reset();
+        });
+
+        function avanzarTarea(id) {
+            const t = tareas.find(x => x.id === id);
+            if (!t) return;
+            const estados = ['Pendiente', 'En Progreso', 'Completada'];
+            const idx = estados.indexOf(t.estado);
+            const anterior = t.estado;
+            t.estado = estados[Math.min(idx + 1, 2)];
+            agregarActividad(`"${t.titulo}" movida de ${anterior} a ${t.estado}`, t.estado === 'Completada' ? '#34d399' : '#fbbf24');
+            guardar();
+            render();
+        }
+
+        function eliminarTarea(id) {
+            const t = tareas.find(x => x.id === id);
+            if (t) agregarActividad(`Tarea eliminada: "${t.titulo}"`, '#fb7185');
+            tareas = tareas.filter(x => x.id !== id);
+            guardar();
+            render();
+        }
+
+        document.getElementById('fecha-actual').textContent = fechaActual();
+        render();
+    </script>
+</body>
+</html>
