@@ -3,7 +3,9 @@ let contadorId = parseInt(localStorage.getItem('contadorId')) || 1;
 
 let mapa = null;
 let marcadores = {};
+let rutasPolylines = {};
 const coordenadasCiudades = {};
+let distanciaCache = {};
 
 const ciudadesBase = {
     'buenos aires': [-34.6037, -58.3816], 'cordoba': [-31.4201, -64.1888],
@@ -54,6 +56,61 @@ function coordsParaCiudad(nombre) {
     return null;
 }
 
+function distanciaHaversine(c1, c2) {
+    const R = 6371;
+    const dLat = (c2[0] - c1[0]) * Math.PI / 180;
+    const dLon = (c2[1] - c1[1]) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(c1[0] * Math.PI / 180) * Math.cos(c2[0] * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatoDistancia(km) {
+    if (km >= 1000) return (km / 1000).toFixed(1).replace('.', ',') + ' mil km';
+    return Math.round(km) + ' km';
+}
+
+function formatoTiempo(horas) {
+    if (horas < 1) return Math.round(horas * 60) + ' min';
+    const h = Math.floor(horas);
+    const m = Math.round((horas - h) * 60);
+    return h + 'h ' + m + 'min';
+}
+
+async function obtenerRutaOSRM(origen, destino) {
+    const key = `${origen}-${destino}`;
+    if (distanciaCache[key]) return distanciaCache[key];
+
+    const cOrigen = coordsParaCiudad(origen);
+    const cDestino = coordsParaCiudad(destino);
+    if (!cOrigen || !cDestino) return null;
+
+    try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${cOrigen[1]},${cOrigen[0]};${cDestino[1]},${cDestino[0]}?overview=full&geometries=geojson`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.code === 'Ok' && data.routes.length > 0) {
+            const ruta = data.routes[0];
+            const resultado = {
+                distancia: ruta.distance / 1000,
+                tiempo: ruta.time / 3600,
+                coordenadas: ruta.geometry.coordinates.map(c => [c[1], c[0]]),
+            };
+            distanciaCache[key] = resultado;
+            return resultado;
+        }
+    } catch (e) {}
+
+    const dist = distanciaHaversine(cOrigen, cDestino);
+    const velPromedio = 70;
+    const resultado = {
+        distancia: dist,
+        tiempo: dist / velPromedio,
+        coordenadas: [cOrigen, cDestino],
+    };
+    distanciaCache[key] = resultado;
+    return resultado;
+}
+
 function initMapa() {
     if (mapa) return;
     mapa = L.map('mapa', { zoomControl: true }).setView([-34.6037, -58.3816], 4);
@@ -89,36 +146,93 @@ function badgeColor(estado) {
     return 'background:#064e3b;color:#34d399;';
 }
 
-function renderMapa() {
+function crearIconoOrigen() {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
+        <circle cx="14" cy="14" r="12" fill="#38bdf8" stroke="#0f172a" stroke-width="2"/>
+        <text x="14" y="19" text-anchor="middle" fill="#0f172a" font-size="14" font-weight="bold">O</text>
+    </svg>`;
+    return L.divIcon({
+        html: svg,
+        className: '',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+        popupAnchor: [0, -16],
+    });
+}
+
+async function renderMapa() {
     if (!mapa) return;
 
     Object.values(marcadores).forEach(m => mapa.removeLayer(m));
+    Object.values(rutasPolylines).forEach(p => mapa.removeLayer(p));
     marcadores = {};
+    rutasPolylines = {};
 
     const enviosConCoords = envios.filter(e => {
-        const c = coordsParaCiudad(e.destino);
-        if (c) { coordenadasCiudades[e.destino.toLowerCase().trim()] = c; }
-        return c !== null;
+        const cDestino = coordsParaCiudad(e.destino);
+        if (cDestino) coordenadasCiudades[e.destino.toLowerCase().trim()] = cDestino;
+        if (e.origen) {
+            const cOrigen = coordsParaCiudad(e.origen);
+            if (cOrigen) coordenadasCiudades[e.origen.toLowerCase().trim()] = cOrigen;
+        }
+        return cDestino !== null;
     });
 
-    enviosConCoords.forEach(e => {
-        const coords = coordsParaCiudad(e.destino);
+    const todosCoords = [];
+
+    for (const e of enviosConCoords) {
+        const coordsDestino = coordsParaCiudad(e.destino);
         const color = colorEstado(e.estado);
 
-        const marker = L.marker(coords, { icon: crearIcono(color) }).addTo(mapa);
-        marker.bindPopup(`
+        const markerDestino = L.marker(coordsDestino, { icon: crearIcono(color) }).addTo(mapa);
+        let popupHtml = `
             <div class="popup-destino">${e.destino}</div>
             <div class="popup-info">Producto: ${e.producto}</div>
             <div class="popup-info">Cantidad: ${e.cantidad} uds</div>
             <div class="popup-info">Peso: ${e.peso} kg</div>
             <span class="popup-estado" style="${badgeColor(e.estado)}">${e.estado}</span>
-        `);
-        marcadores[e.id] = marker;
-    });
+        `;
+        markerDestino.bindPopup(popupHtml);
+        marcadores[e.id] = markerDestino;
+        todosCoords.push(coordsDestino);
 
-    if (enviosConCoords.length > 0) {
-        const grupo = L.featureGroup(Object.values(marcadores));
-        mapa.fitBounds(grupo.getBounds().pad(0.2));
+        if (e.origen) {
+            const coordsOrigen = coordsParaCiudad(e.origen);
+            if (coordsOrigen) {
+                const markerOrigen = L.marker(coordsOrigen, { icon: crearIconoOrigen() }).addTo(mapa);
+                markerOrigen.bindPopup(`<div class="popup-destino" style="color:#38bdf8">Origen: ${e.origen}</div>`);
+                marcadores[e.id + '_origen'] = markerOrigen;
+                todosCoords.push(coordsOrigen);
+
+                const ruta = await obtenerRutaOSRM(e.origen, e.destino);
+                if (ruta) {
+                    e._distancia = ruta.distancia;
+                    e._tiempo = ruta.tiempo;
+
+                    const lineaColor = e.estado === 'En Transito' ? '#a78bfa' : e.estado === 'Pendiente' ? '#fbbf24' : '#34d399';
+                    const polyline = L.polyline(ruta.coordenadas, {
+                        color: lineaColor,
+                        weight: 3,
+                        opacity: 0.8,
+                        dashArray: e.estado === 'Pendiente' ? '8, 8' : null,
+                    }).addTo(mapa);
+                    rutasPolylines[e.id] = polyline;
+
+                    popupHtml += `
+                        <div class="popup-ruta">
+                            <div class="popup-distancia">${formatoDistancia(ruta.distancia)}</div>
+                            <div class="popup-tiempo">Est. ${formatoTiempo(ruta.tiempo)} - ${e.origen}</div>
+                        </div>
+                    `;
+                    markerDestino.setPopupContent(popupHtml);
+                }
+            }
+        }
+    }
+
+    if (todosCoords.length > 0) {
+        const grupo = L.featureGroup(todosCoords.map(c => L.marker(c)));
+        mapa.fitBounds(grupo.getBounds().pad(0.15));
     }
 
     actualizarRastreoTiempoReal();
@@ -187,13 +301,17 @@ function claseBadge(estado) {
 function renderTabla() {
     const tbody = document.getElementById('tabla-envios');
     if (envios.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#475569;padding:2rem;">No hay envios registrados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#475569;padding:2rem;">No hay envios registrados</td></tr>';
         return;
     }
-    tbody.innerHTML = envios.map(e => `
+    tbody.innerHTML = envios.map(e => {
+        const dist = e._distancia ? formatoDistancia(e._distancia) : '-';
+        return `
         <tr>
             <td>#${String(e.id).padStart(4, '0')}</td>
+            <td>${e.origen || '-'}</td>
             <td>${e.destino}</td>
+            <td><span class="distancia-badge">${dist}</span></td>
             <td>${e.producto}</td>
             <td>${e.cantidad}</td>
             <td>${e.peso} kg</td>
@@ -202,8 +320,8 @@ function renderTabla() {
                 <button class="btn-sm" onclick="cambiarEstado(${e.id})">Cambiar</button>
                 <button class="btn-sm eliminar" onclick="eliminarEnvio(${e.id})">X</button>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
 }
 
 function renderGrafico() {
@@ -235,27 +353,30 @@ function renderRutas() {
         contenedor.innerHTML = '<div style="color:#475569;font-size:0.85rem;padding:1rem 0;">Sin rutas activas</div>';
         return;
     }
-    contenedor.innerHTML = activos.slice(0, 5).map(e => `
+    contenedor.innerHTML = activos.slice(0, 5).map(e => {
+        const dist = e._distancia ? formatoDistancia(e._distancia) : '';
+        return `
         <div class="ruta">
             <div class="ruta-dot" style="background:#a78bfa"></div>
-            <span class="ruta-destino">${e.destino}</span>
-            <span class="ruta-fecha">${e.producto}</span>
-        </div>
-    `).join('');
+            <span class="ruta-destino">${e.origen || '?'} → ${e.destino}</span>
+            <span class="ruta-fecha">${dist}</span>
+        </div>`;
+    }).join('');
 }
 
-function render() {
+async function render() {
     actualizarKPIs();
     renderTabla();
     renderGrafico();
     renderRutas();
-    renderMapa();
+    await renderMapa();
 }
 
 document.getElementById('form-envio').addEventListener('submit', function(e) {
     e.preventDefault();
     const envio = {
         id: contadorId++,
+        origen: document.getElementById('origen').value.trim(),
         destino: document.getElementById('destino').value.trim(),
         producto: document.getElementById('producto').value.trim(),
         cantidad: parseInt(document.getElementById('cantidad').value),

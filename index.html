@@ -37,6 +37,8 @@
             <div class="panel">
                 <h2>Nuevo Envio</h2>
                 <form id="form-envio">
+                    <label>Origen</label>
+                    <input type="text" id="origen" placeholder="Ciudad de origen" required>
                     <label>Destino</label>
                     <input type="text" id="destino" placeholder="Ciudad de destino" required>
                     <label>Producto</label>
@@ -78,7 +80,9 @@
                     <thead>
                         <tr>
                             <th>ID</th>
+                            <th>Origen</th>
                             <th>Destino</th>
+                            <th>Distancia</th>
                             <th>Producto</th>
                             <th>Cantidad</th>
                             <th>Peso</th>
