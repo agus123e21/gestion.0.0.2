@@ -54,9 +54,18 @@ tr:hover td { background: #334155; }
 .table-wrapper::-webkit-scrollbar { width: 6px; }
 .table-wrapper::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
 
-.mapa-placeholder { width: 100%; height: 160px; background: #0f172a; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #475569; font-size: 0.85rem; border: 1px dashed #334155; position: relative; overflow: hidden; }
-.mapa-placeholder::before { content: ''; position: absolute; width: 200%; height: 1px; background: #334155; top: 50%; transform: rotate(15deg); }
-.mapa-placeholder::after { content: ''; position: absolute; width: 1px; height: 200%; background: #334155; left: 50%; transform: rotate(25deg); }
+.mapa-real { width: 100%; height: 350px; border-radius: 8px; z-index: 1; }
+.panel-mapa { grid-column: 1 / -1; }
+.leaflet-popup-content-wrapper { background: #1e293b; color: #e2e8f0; border-radius: 8px; }
+.leaflet-popup-tip { background: #1e293b; }
+.leaflet-popup-content { margin: 0.8rem; font-family: 'Segoe UI', sans-serif; }
+.popup-destino { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.3rem; }
+.popup-info { font-size: 0.8rem; color: #94a3b8; }
+.popup-estado { display: inline-block; margin-top: 0.3rem; padding: 0.15rem 0.5rem; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+.leaflet-control-attribution { background: rgba(15,23,42,0.8) !important; color: #475569 !important; font-size: 0.6rem !important; }
+.leaflet-control-attribution a { color: #64748b !important; }
+.leaflet-control-zoom a { background: #1e293b !important; color: #94a3b8 !important; border-color: #334155 !important; }
+.leaflet-control-zoom a:hover { background: #334155 !important; }
 
 .ruta { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid #1e293b; font-size: 0.85rem; }
 .ruta:last-child { border-bottom: none; }

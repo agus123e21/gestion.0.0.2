@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Logistica</title>
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
     <header>
@@ -64,9 +65,9 @@
                 <div id="lista-rutas"></div>
             </div>
 
-            <div class="panel">
+            <div class="panel panel-mapa">
                 <h2>Mapa de Operaciones</h2>
-                <div class="mapa-placeholder">Mapa no disponible</div>
+                <div id="mapa" class="mapa-real"></div>
             </div>
         </div>
 
@@ -93,6 +94,7 @@
 
     <footer>Sistema de Control Logistico v1.0</footer>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
