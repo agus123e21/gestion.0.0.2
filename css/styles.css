@@ -831,6 +831,21 @@ select.field-input {
     margin-bottom: 1.25rem;
 }
 
+.modal-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--c-primary-light);
+    margin-bottom: 0.5rem;
+}
+
+.modal-form .fields-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
 .form-section-label {
     font-size: 0.75rem;
     font-weight: 700;

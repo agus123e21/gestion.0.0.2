@@ -392,6 +392,63 @@
 <!-- Toasts -->
 <div id="toast-container" role="status" aria-live="polite"></div>
 
+<!-- ═══════════════════════════════════════════
+     MODAL: DATOS DEL VIAJE
+═════════════════════════════════════════════ -->
+<div id="modal-viaje" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-viaje-titulo">
+    <div class="modal-panel">
+        <div class="modal-header">
+            <h2 id="modal-viaje-titulo" class="modal-title">Datos del Viaje</h2>
+            <button id="btn-cerrar-viaje" class="modal-close" aria-label="Cerrar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <form id="form-viaje" class="modal-form">
+            <div class="modal-section-title">Camionero</div>
+            <div class="field-block">
+                <label class="field-label" for="vj-camionero">Nombre</label>
+                <input type="text" id="vj-camionero" class="field-input" placeholder="Nombre del camionero" required autocomplete="off">
+            </div>
+            <div class="fields-row">
+                <div class="field-block">
+                    <label class="field-label" for="vj-celular">Celular</label>
+                    <input type="tel" id="vj-celular" class="field-input" placeholder="Ej: 299 123 4567" required inputmode="tel">
+                </div>
+                <div class="field-block">
+                    <label class="field-label" for="vj-gmail">Gmail</label>
+                    <input type="email" id="vj-gmail" class="field-input" placeholder="correo@ejemplo.com" required inputmode="email">
+                </div>
+            </div>
+
+            <div class="form-divider"></div>
+
+            <div class="modal-section-title">Cliente</div>
+            <div class="fields-row">
+                <div class="field-block">
+                    <label class="field-label" for="vj-cliente">Nombre del cliente</label>
+                    <input type="text" id="vj-cliente" class="field-input" placeholder="Nombre o razón social" required autocomplete="off">
+                </div>
+                <div class="field-block">
+                    <label class="field-label" for="vj-remito">N° de remito</label>
+                    <input type="text" id="vj-remito" class="field-input" placeholder="Ej: 0001-00012345" required autocomplete="off">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="btn-cancelar-viaje" class="btn-ghost">Cancelar</button>
+                <button type="submit" id="btn-guardar-viaje" class="btn-primary">
+                    <span id="vj-btn-texto">Guardar Viaje</span>
+                    <span id="vj-btn-loader" class="spinner hidden" aria-hidden="true"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="js/app.js"></script>
 </body>

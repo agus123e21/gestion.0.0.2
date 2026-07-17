@@ -23,6 +23,7 @@
     let idEnvioDetalle = null;
     let filtroEstado = 'todos';
     let filtroBuscar = '';
+    let rutaPendiente = null;
 
     // Perfil de Camión Argentino Estándar
     let perfilCamion = {
@@ -527,7 +528,10 @@
             lista = lista.filter(e =>
                 e.origen.toLowerCase().includes(q) ||
                 e.destino.toLowerCase().includes(q) ||
-                e.producto.toLowerCase().includes(q)
+                e.producto.toLowerCase().includes(q) ||
+                (e.camionero && e.camionero.toLowerCase().includes(q)) ||
+                (e.cliente && e.cliente.toLowerCase().includes(q)) ||
+                (e.remito && e.remito.toLowerCase().includes(q))
             );
         }
 
@@ -652,6 +656,29 @@
         document.getElementById('modal-perfil')?.classList.add('hidden');
     }
 
+    // Modal Datos del Viaje
+    function abrirModalViaje(envioExistente) {
+        const m = document.getElementById('modal-viaje');
+        if (!m) return;
+
+        if (envioExistente) {
+            document.getElementById('vj-camionero').value = envioExistente.camionero || '';
+            document.getElementById('vj-celular').value = envioExistente.celular || '';
+            document.getElementById('vj-gmail').value = envioExistente.gmail || '';
+            document.getElementById('vj-cliente').value = envioExistente.cliente || '';
+            document.getElementById('vj-remito').value = envioExistente.remito || '';
+        } else {
+            document.getElementById('form-viaje')?.reset();
+        }
+
+        m.classList.remove('hidden');
+    }
+
+    function cerrarModalViaje() {
+        document.getElementById('modal-viaje')?.classList.add('hidden');
+        rutaPendiente = null;
+    }
+
     // Modal Detalle Viaje
     function abrirDetalle(id) {
         const e = envios.find(x => x.id === id);
@@ -668,7 +695,12 @@
                 ['Distancia', formatoDistancia(e.distancia)],
                 ['Tiempo estimado', formatoTiempo(e.tiempo)],
                 e.distancia ? ['Consumo estimado', formatoFuel(e.distancia, e.pesoCarga)] : null,
-                ['Estado', e.estado]
+                ['Estado', e.estado],
+                e.camionero ? ['Camionero', e.camionero] : null,
+                e.celular ? ['Celular', e.celular] : null,
+                e.gmail ? ['Gmail', e.gmail] : null,
+                e.cliente ? ['Cliente', e.cliente] : null,
+                e.remito ? ['N° Remito', e.remito] : null
             ].filter(Boolean).map(([k, v]) => 
                 `<div class="detail-row">
                     <span class="detail-key">${k}</span>
@@ -760,26 +792,19 @@
                 }
 
                 if (idEnvioEditando === null) {
-                    const nuevo = {
-                        id: contadorId++,
+                    rutaPendiente = {
                         origen, destino, producto, pesoCarga, estado,
                         ...dataRuta,
                         fecha: new Date().toISOString()
                     };
-                    envios.push(nuevo);
-                    showToast('Ruta calculada con éxito.', 'success');
-                    formEnvio.reset();
+                    abrirModalViaje(null);
                 } else {
                     const idx = envios.findIndex(x => x.id === idEnvioEditando);
                     if (idx !== -1) {
                         envios[idx] = { ...envios[idx], origen, destino, producto, pesoCarga, estado, ...dataRuta };
+                        abrirModalViaje(envios[idx]);
                     }
-                    showToast('Ruta modificada con éxito.', 'success');
-                    cancelarEdicion();
                 }
-
-                guardar();
-                render();
 
             } catch (err) {
                 showToast(err.message || 'Error al calcular la ruta.', 'error');
@@ -806,6 +831,45 @@
         triggersPerfil.forEach(btn => btn?.addEventListener('click', abrirModalPerfil));
         document.getElementById('btn-cerrar-perfil')?.addEventListener('click', cerrarModalPerfil);
         document.getElementById('btn-cerrar-perfil-2')?.addEventListener('click', cerrarModalPerfil);
+
+        // Modal Datos del Viaje
+        document.getElementById('btn-cerrar-viaje')?.addEventListener('click', cerrarModalViaje);
+        document.getElementById('btn-cancelar-viaje')?.addEventListener('click', cerrarModalViaje);
+
+        document.getElementById('form-viaje')?.addEventListener('submit', e => {
+            e.preventDefault();
+            const camionero = document.getElementById('vj-camionero').value.trim();
+            const celular = document.getElementById('vj-celular').value.trim();
+            const gmail = document.getElementById('vj-gmail').value.trim();
+            const cliente = document.getElementById('vj-cliente').value.trim();
+            const remito = document.getElementById('vj-remito').value.trim();
+
+            if (!camionero || !celular || !gmail || !cliente || !remito) {
+                showToast('Completá todos los campos del viaje.', 'error');
+                return;
+            }
+
+            const datosExtra = { camionero, celular, gmail, cliente, remito };
+
+            if (idEnvioEditando !== null) {
+                const idx = envios.findIndex(x => x.id === idEnvioEditando);
+                if (idx !== -1) {
+                    envios[idx] = { ...envios[idx], ...datosExtra };
+                }
+                showToast('Datos del viaje actualizados.', 'success');
+                cancelarEdicion();
+            } else if (rutaPendiente) {
+                const nuevo = { id: contadorId++, ...rutaPendiente, ...datosExtra };
+                envios.push(nuevo);
+                showToast('Viaje guardado con éxito.', 'success');
+                document.getElementById('form-envio')?.reset();
+                rutaPendiente = null;
+            }
+
+            cerrarModalViaje();
+            guardar();
+            render();
+        });
 
         document.getElementById('form-perfil')?.addEventListener('submit', e => {
             e.preventDefault();
