@@ -1,6 +1,6 @@
-# 🔌 Documentación de APIs Integradas — FleteAR
+# 🔌 Documentación de APIs Integradas — TerMate
 
-Este documento detalla el funcionamiento técnico, endpoints, parámetros y formatos de respuesta de las APIs externas integradas en el sistema de gestión de fletes **FleteAR**.
+Este documento detalla el funcionamiento técnico, endpoints, parámetros y formatos de respuesta de las APIs externas integradas en el sistema de gestión de fletes **TerMate**.
 
 ---
 
@@ -12,7 +12,7 @@ Utilizada como geocodificador principal para sugerencias federales en tiempo rea
 *   **Método:** `GET`
 *   **Endpoint:** `https://nominatim.openstreetmap.org/search`
 *   **Headers requeridos:**
-    *   `User-Agent: FleteAR/2.1` (Evita bloqueos de tráfico por parte de la OSM Foundation)
+    *   `User-Agent: TerMate/2.1` (Evita bloqueos de tráfico por parte de la OSM Foundation)
 
 #### Parámetros de Consulta:
 | Parámetro | Tipo | Valor / Ejemplo | Descripción |
@@ -205,7 +205,7 @@ GET https://router.project-osrm.org/route/v1/driving/-58.3815,-34.6037;-64.1885,
 
 ## 🛢️ 3. Cálculo de Consumo Real de Combustible
 
-El consumo promedio de un camión en ruta no es constante; varía drásticamente según la carga útil transportada. FleteAR utiliza un modelo de **interpolación lineal** configurable por el gerente desde la sección de ajustes:
+El consumo promedio de un camión en ruta no es constante; varía drásticamente según la carga útil transportada. TerMate utiliza un modelo de **interpolación lineal** configurable por el gerente desde la sección de ajustes:
 
 ### Variables de Entrada:
 *   $C_{\text{vacío}}$: Consumo del camión sin carga en $\text{L}/100\text{ km}$ (ej: $25\text{ L}$).

@@ -1,5 +1,5 @@
 /**
- * FleteAR — Sistema de Gestión de Rutas y Logística para Camiones
+ * TerMate — Sistema de Gestión de Rutas y Logística para Camiones
  * v2.1 — Refinado Profesional, Geocodificación Federal, Cero Emojis
  */
 (function () {
@@ -34,10 +34,10 @@
         consumoLleno: 38      // Litros/100km a carga completa (definida por perfilCamion.peso)
     };
 
-    const KEY_GEO_CACHE = 'fletar_geo_cache';
-    const KEY_ENVIOS     = 'fletar_envios';
-    const KEY_CONTADOR   = 'fletar_contador';
-    const KEY_PERFIL     = 'fletar_perfil';
+    const KEY_GEO_CACHE = 'termate_geo_cache';
+    const KEY_ENVIOS     = 'termate_envios';
+    const KEY_CONTADOR   = 'termate_contador';
+    const KEY_PERFIL     = 'termate_perfil';
     const cacheGeo = JSON.parse(localStorage.getItem(KEY_GEO_CACHE) || '{}');
 
     const ORS_BASE = 'https://api.openrouteservice.org/v2';
@@ -128,7 +128,7 @@
                 addressdetails: 1
             });
             const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
-                headers: { 'User-Agent': 'FleteAR/2.1' },
+                headers: { 'User-Agent': 'TerMate/2.1' },
                 signal: AbortSignal.timeout(4000)
             });
             if (!res.ok) return [];
@@ -181,7 +181,7 @@
                     countrycodes: 'ar'
                 });
                 const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
-                    headers: { 'User-Agent': 'FleteAR/2.1' }
+                    headers: { 'User-Agent': 'TerMate/2.1' }
                 });
                 if (res.ok) {
                     const data = await res.json();

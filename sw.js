@@ -1,9 +1,9 @@
-// Service Worker — FleteAR
+// Service Worker — TerMate
 // Estrategia offline-first: sirve desde cache, actualiza en fondo
 
-const CACHE_NAME = 'fletar-v1';
-const TILE_CACHE = 'fletar-tiles-v1';
-const API_CACHE = 'fletar-api-v1';
+const CACHE_NAME = 'termate-v1';
+const TILE_CACHE = 'termate-tiles-v1';
+const API_CACHE = 'termate-api-v1';
 
 // Recursos core que se cachean en la instalación
 const CORE_ASSETS = [

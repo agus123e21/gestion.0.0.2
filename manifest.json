@@ -1,6 +1,6 @@
 {
-  "name": "FleteAR — Gestión de Camiones",
-  "short_name": "FleteAR",
+  "name": "TerMate — Gestión de Camiones",
+  "short_name": "TerMate",
   "description": "Gestión de rutas y envíos para camiones en Argentina. Funciona sin internet.",
   "start_url": "./index.html",
   "display": "standalone",
