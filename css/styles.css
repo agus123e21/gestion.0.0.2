@@ -1075,3 +1075,14 @@ select.field-input {
 .leaflet-tooltip-right:before {
     border: none !important;
 }
+
+/* Camion cards */
+.camion-card {
+    position: relative;
+}
+.camion-card-delete {
+    transition: color 0.15s;
+}
+.camion-card-delete:hover {
+    color: #ef4444 !important;
+}

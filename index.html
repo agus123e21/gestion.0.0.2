@@ -6,8 +6,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#070b12">
-    <meta name="description" content="Gestión de rutas para camiones en Argentina. Funciona sin internet.">
-    <title>TerMate — Gestión de Rutas</title>
+    <meta name="description" content="Gestion de rutas para camiones en Argentina. Funciona sin internet.">
+    <title>TerMate — Gestion de Rutas</title>
 
     <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,9 +18,7 @@
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════
-     SIDEBAR — visible en desktop
-═══════════════════════════════════════════════ -->
+<!-- SIDEBAR -->
 <aside id="sidebar">
     <div class="sidebar-brand">
         <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -33,7 +31,7 @@
         <span class="brand-name">TerMate</span>
     </div>
 
-    <nav class="sidebar-nav" aria-label="Navegación principal">
+    <nav class="sidebar-nav" aria-label="Navegacion principal">
         <button class="sidebar-btn active" data-tab="nueva-ruta" id="snav-nueva-ruta">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -61,6 +59,16 @@
             </svg>
             Mapa
         </button>
+        <button class="sidebar-btn" data-tab="camiones" id="snav-camiones">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="11" width="15" height="10" rx="1"/>
+                <path d="M16 11l4 3v7h-4V11z"/>
+                <circle cx="5.5" cy="21" r="1.5"/>
+                <circle cx="18.5" cy="21" r="1.5"/>
+                <path d="M1 8h9M1 5h6"/>
+            </svg>
+            Mis Camiones
+        </button>
     </nav>
 
     <div class="sidebar-footer">
@@ -68,19 +76,10 @@
             <span class="conexion-dot"></span>
             <span class="conexion-texto">Online</span>
         </div>
-        <button id="btn-perfil-camion" class="sidebar-settings-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-            </svg>
-            Ajustes del Camión
-        </button>
     </div>
 </aside>
 
-<!-- ═══════════════════════════════════════════
-     HEADER MOBILE — visible solo en móvil
-═══════════════════════════════════════════════ -->
+<!-- HEADER MOBILE -->
 <header id="app-header">
     <div class="header-brand">
         <svg class="brand-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -96,21 +95,13 @@
             <span class="conexion-dot"></span>
             <span class="conexion-texto">Online</span>
         </span>
-        <button id="btn-perfil-camion-mobile" class="btn-header-icon" aria-label="Ajustes del camión">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-            </svg>
-        </button>
     </div>
 </header>
 
-<!-- ═══════════════════════════════════════════
-     CONTENIDO PRINCIPAL
-═══════════════════════════════════════════════ -->
+<!-- CONTENIDO PRINCIPAL -->
 <main id="app-main">
 
-    <!-- KPIs — siempre visibles en desktop, en tab nueva-ruta en mobile -->
+    <!-- KPIs -->
     <div id="kpis-bar" class="kpis-bar">
         <div class="kpi-card">
             <span class="kpi-label">Pendientes</span>
@@ -128,26 +119,22 @@
         </div>
     </div>
 
-    <!-- ── TAB: NUEVA RUTA ────────────────────────────────── -->
+    <!-- TAB: NUEVA RUTA -->
     <section id="tab-nueva-ruta" class="tab-pane active">
-
         <div class="pane-cols">
-
-            <!-- Columna izquierda: formulario -->
             <div class="pane-col-form">
                 <div class="section-header">
                     <h2 id="form-titulo" class="section-title">Nueva Ruta</h2>
                 </div>
 
                 <form id="form-envio" novalidate class="route-form">
-
                     <div class="field-block">
                         <label class="field-label" for="origen">Origen</label>
                         <div class="input-with-indicator">
                             <span class="route-dot route-dot--start"></span>
                             <div class="autocomplete-wrap">
                                 <input type="text" id="origen" class="field-input"
-                                    placeholder="Dirección completa de carga"
+                                    placeholder="Direccion completa de carga"
                                     required autocomplete="off" inputmode="text">
                                 <ul id="sugerencias-origen" class="suggestions-list" role="listbox"></ul>
                             </div>
@@ -164,7 +151,7 @@
                             <span class="route-dot route-dot--end"></span>
                             <div class="autocomplete-wrap">
                                 <input type="text" id="destino" class="field-input"
-                                    placeholder="Dirección completa de descarga"
+                                    placeholder="Direccion completa de descarga"
                                     required autocomplete="off" inputmode="text">
                                 <ul id="sugerencias-destino" class="suggestions-list" role="listbox"></ul>
                             </div>
@@ -174,9 +161,9 @@
                     <div class="form-divider"></div>
 
                     <div class="field-block">
-                        <label class="field-label" for="producto">Descripción de la carga</label>
+                        <label class="field-label" for="producto">Descripcion de la carga</label>
                         <input type="text" id="producto" class="field-input"
-                            placeholder="Ej: Granos, materiales de construcción"
+                            placeholder="Ej: Granos, materiales de construccion"
                             required autocomplete="off">
                     </div>
 
@@ -190,10 +177,17 @@
                             <label class="field-label" for="estado">Estado</label>
                             <select id="estado" class="field-input">
                                 <option value="Pendiente">Pendiente</option>
-                                <option value="En Transito">En Tránsito</option>
+                                <option value="En Transito">En Transito</option>
                                 <option value="Entregado">Entregado</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div class="field-block">
+                        <label class="field-label" for="select-camion">Camion asignado</label>
+                        <select id="select-camion" class="field-input">
+                            <option value="">-- Seleccionar camion --</option>
+                        </select>
                     </div>
 
                     <button type="submit" id="btn-submit-envio" class="btn-primary">
@@ -202,11 +196,10 @@
                     </button>
 
                     <button type="button" id="btn-cancelar-edicion" class="btn-ghost hidden">
-                        Cancelar edición
+                        Cancelar edicion
                     </button>
                 </form>
 
-                <!-- Resultado de la ruta -->
                 <div id="resultado-ruta" class="result-card hidden">
                     <div class="result-header">
                         <span class="result-label">Ruta calculada</span>
@@ -214,17 +207,17 @@
                     </div>
                     <div class="result-metrics">
                         <div class="result-metric">
-                            <span class="result-metric-val" id="res-distancia">—</span>
+                            <span class="result-metric-val" id="res-distancia">--</span>
                             <span class="result-metric-lbl">Distancia</span>
                         </div>
                         <div class="result-metric-sep"></div>
                         <div class="result-metric">
-                            <span class="result-metric-val" id="res-tiempo">—</span>
+                            <span class="result-metric-val" id="res-tiempo">--</span>
                             <span class="result-metric-lbl">Tiempo est.</span>
                         </div>
                         <div class="result-metric-sep"></div>
                         <div class="result-metric">
-                            <span class="result-metric-val" id="res-fuel">—</span>
+                            <span class="result-metric-val" id="res-fuel">--</span>
                             <span class="result-metric-lbl">Combustible</span>
                         </div>
                     </div>
@@ -232,15 +225,13 @@
                 </div>
             </div>
 
-            <!-- Columna derecha: mapa inline (solo desktop) -->
             <div class="pane-col-map" id="mapa-inline-wrap">
                 <div id="mapa-inline" class="map-inline" aria-label="Vista previa de ruta"></div>
             </div>
-
         </div>
     </section>
 
-    <!-- ── TAB: MIS VIAJES ───────────────────────────────── -->
+    <!-- TAB: MIS VIAJES -->
     <section id="tab-mis-viajes" class="tab-pane">
         <div class="section-header">
             <h2 class="section-title">Mis Viajes</h2>
@@ -266,17 +257,29 @@
         <div id="lista-viajes" class="trips-grid"></div>
     </section>
 
-    <!-- ── TAB: MAPA ─────────────────────────────────────── -->
+    <!-- TAB: MAPA -->
     <section id="tab-mapa" class="tab-pane tab-pane--map">
         <div id="mapa" class="map-full" aria-label="Mapa de operaciones"></div>
     </section>
 
+    <!-- TAB: MIS CAMIONES -->
+    <section id="tab-camiones" class="tab-pane">
+        <div class="section-header">
+            <h2 class="section-title">Mis Camiones</h2>
+            <button id="btn-nuevo-camion" class="btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:4px">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Nuevo Camion
+            </button>
+        </div>
+        <div id="lista-camiones" class="trips-grid"></div>
+    </section>
+
 </main>
 
-<!-- ═══════════════════════════════════════════
-     BOTTOM NAV — visible solo en móvil
-═══════════════════════════════════════════════ -->
-<nav id="bottom-nav" aria-label="Navegación">
+<!-- BOTTOM NAV -->
+<nav id="bottom-nav" aria-label="Navegacion">
     <button class="nav-btn active" data-tab="nueva-ruta" id="nav-nueva-ruta">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"/>
@@ -304,68 +307,80 @@
         </svg>
         <span>Mapa</span>
     </button>
+    <button class="nav-btn" data-tab="camiones" id="nav-camiones">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="11" width="15" height="10" rx="1"/>
+            <path d="M16 11l4 3v7h-4V11z"/>
+            <circle cx="5.5" cy="21" r="1.5"/>
+            <circle cx="18.5" cy="21" r="1.5"/>
+        </svg>
+        <span>Camiones</span>
+    </button>
 </nav>
 
-<!-- ═══════════════════════════════════════════
-     MODAL: AJUSTES DEL CAMIÓN
-═══════════════════════════════════════════════ -->
-<div id="modal-perfil" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-perfil-titulo">
+<!-- MODAL: AGREGAR / EDITAR CAMION -->
+<div id="modal-camion" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-camion-titulo">
     <div class="modal-panel">
         <div class="modal-header">
-            <h2 id="modal-perfil-titulo" class="modal-title">Perfil del Vehículo</h2>
-            <button id="btn-cerrar-perfil" class="modal-close" aria-label="Cerrar">
+            <h2 id="modal-camion-titulo" class="modal-title">Nuevo Camion</h2>
+            <button id="btn-cerrar-camion" class="modal-close" aria-label="Cerrar">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
             </button>
         </div>
-        <p class="modal-desc">Estas dimensiones se usan para calcular rutas aptas para tu camión.</p>
 
-        <form id="form-perfil">
+        <form id="form-camion" class="modal-form">
+            <input type="hidden" id="cam-id" value="">
+            <div class="field-block">
+                <label class="field-label" for="cam-nombre">Nombre / Alias</label>
+                <input type="text" id="cam-nombre" class="field-input" placeholder="Ej: Volque 01, Acoplado 3Ejes" required autocomplete="off">
+            </div>
+
             <div class="form-section-label">Dimensiones y peso</div>
             <div class="fields-row">
                 <div class="field-block">
-                    <label class="field-label" for="camion-peso">Peso máximo (tn)</label>
-                    <input type="number" id="camion-peso" class="field-input" placeholder="20" min="1" max="60" step="0.5" inputmode="decimal">
+                    <label class="field-label" for="cam-peso">Peso maximo (tn)</label>
+                    <input type="number" id="cam-peso" class="field-input" placeholder="20" min="1" max="60" step="0.5" inputmode="decimal">
                 </div>
                 <div class="field-block">
-                    <label class="field-label" for="camion-alto">Altura (m)</label>
-                    <input type="number" id="camion-alto" class="field-input" placeholder="4.0" min="1" max="5" step="0.1" inputmode="decimal">
+                    <label class="field-label" for="cam-alto">Altura (m)</label>
+                    <input type="number" id="cam-alto" class="field-input" placeholder="4.0" min="1" max="5" step="0.1" inputmode="decimal">
                 </div>
             </div>
             <div class="fields-row">
                 <div class="field-block">
-                    <label class="field-label" for="camion-largo">Longitud (m)</label>
-                    <input type="number" id="camion-largo" class="field-input" placeholder="18" min="3" max="30" step="0.5" inputmode="decimal">
+                    <label class="field-label" for="cam-largo">Longitud (m)</label>
+                    <input type="number" id="cam-largo" class="field-input" placeholder="18" min="3" max="30" step="0.5" inputmode="decimal">
                 </div>
                 <div class="field-block">
-                    <label class="field-label" for="camion-ancho">Ancho (m)</label>
-                    <input type="number" id="camion-ancho" class="field-input" placeholder="2.5" min="1" max="3" step="0.1" inputmode="decimal">
+                    <label class="field-label" for="cam-ancho">Ancho (m)</label>
+                    <input type="number" id="cam-ancho" class="field-input" placeholder="2.5" min="1" max="3" step="0.1" inputmode="decimal">
                 </div>
             </div>
+
             <div class="form-section-label">Consumo estimado (L/100km)</div>
             <div class="fields-row">
                 <div class="field-block">
-                    <label class="field-label" for="camion-consumo-vacio">Consumo Vacío</label>
-                    <input type="number" id="camion-consumo-vacio" class="field-input" placeholder="25" min="5" max="100" step="1" inputmode="decimal">
+                    <label class="field-label" for="cam-cons-vacio">Vacio</label>
+                    <input type="number" id="cam-cons-vacio" class="field-input" placeholder="25" min="5" max="100" step="1" inputmode="decimal">
                 </div>
                 <div class="field-block">
-                    <label class="field-label" for="camion-consumo-cargado">Consumo Cargado</label>
-                    <input type="number" id="camion-consumo-cargado" class="field-input" placeholder="38" min="5" max="100" step="1" inputmode="decimal">
+                    <label class="field-label" for="cam-cons-cargado">Cargado</label>
+                    <input type="number" id="cam-cons-cargado" class="field-input" placeholder="38" min="5" max="100" step="1" inputmode="decimal">
                 </div>
             </div>
+
             <div class="modal-actions">
-                <button type="submit" class="btn-primary">Guardar Perfil</button>
-                <button type="button" id="btn-cerrar-perfil-2" class="btn-ghost">Cancelar</button>
+                <button type="button" id="btn-cancelar-camion" class="btn-ghost">Cancelar</button>
+                <button type="submit" class="btn-primary">Guardar Camion</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     MODAL: DETALLE DE VIAJE
-═══════════════════════════════════════════════ -->
+<!-- MODAL: DETALLE DE VIAJE -->
 <div id="modal-detalle" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-detalle-titulo">
     <div class="modal-panel">
         <div class="modal-header">
@@ -389,12 +404,7 @@
     </div>
 </div>
 
-<!-- Toasts -->
-<div id="toast-container" role="status" aria-live="polite"></div>
-
-<!-- ═══════════════════════════════════════════
-     MODAL: DATOS DEL VIAJE
-═════════════════════════════════════════════ -->
+<!-- MODAL: DATOS DEL VIAJE -->
 <div id="modal-viaje" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-viaje-titulo">
     <div class="modal-panel">
         <div class="modal-header">
@@ -430,10 +440,10 @@
             <div class="fields-row">
                 <div class="field-block">
                     <label class="field-label" for="vj-cliente">Nombre del cliente</label>
-                    <input type="text" id="vj-cliente" class="field-input" placeholder="Nombre o razón social" required autocomplete="off">
+                    <input type="text" id="vj-cliente" class="field-input" placeholder="Nombre o razon social" required autocomplete="off">
                 </div>
                 <div class="field-block">
-                    <label class="field-label" for="vj-remito">N° de remito</label>
+                    <label class="field-label" for="vj-remito">N de remito</label>
                     <input type="text" id="vj-remito" class="field-input" placeholder="Ej: 0001-00012345" required autocomplete="off">
                 </div>
             </div>
@@ -448,6 +458,9 @@
         </form>
     </div>
 </div>
+
+<!-- Toasts -->
+<div id="toast-container" role="status" aria-live="polite"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="js/app.js"></script>

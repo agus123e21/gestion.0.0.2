@@ -25,20 +25,16 @@
     let filtroBuscar = '';
     let rutaPendiente = null;
 
-    // Perfil de Camión Argentino Estándar
-    let perfilCamion = {
-        peso: 20,
-        alto: 4.0,
-        largo: 18,
-        ancho: 2.5,
-        consumoVacio: 25,     // Litros/100km sin carga
-        consumoLleno: 38      // Litros/100km a carga completa (definida por perfilCamion.peso)
-    };
+    // Camiones registrados
+    let camiones = [];
+    let contadorCamiones = 1;
+    let camionEditandoId = null;
 
     const KEY_GEO_CACHE = 'termate_geo_cache';
     const KEY_ENVIOS     = 'termate_envios';
     const KEY_CONTADOR   = 'termate_contador';
-    const KEY_PERFIL     = 'termate_perfil';
+    const KEY_CAMIONES   = 'termate_camiones';
+    const KEY_CONT_CAM   = 'termate_cont_camiones';
     const cacheGeo = JSON.parse(localStorage.getItem(KEY_GEO_CACHE) || '{}');
 
     const ORS_BASE = 'https://api.openrouteservice.org/v2';
@@ -86,8 +82,10 @@
         try {
             localStorage.setItem(KEY_ENVIOS, JSON.stringify(envios));
             localStorage.setItem(KEY_CONTADOR, String(contadorId));
+            localStorage.setItem(KEY_CAMIONES, JSON.stringify(camiones));
+            localStorage.setItem(KEY_CONT_CAM, String(contadorCamiones));
         } catch {
-            showToast('Almacenamiento lleno. Eliminá rutas viejas.', 'error');
+            showToast('Almacenamiento lleno. Elimina rutas viejas.', 'error');
         }
     }
 
@@ -103,8 +101,10 @@
             if (e) envios = JSON.parse(e);
             const c = localStorage.getItem(KEY_CONTADOR);
             if (c) contadorId = parseInt(c, 10);
-            const p = localStorage.getItem(KEY_PERFIL);
-            if (p) perfilCamion = { ...perfilCamion, ...JSON.parse(p) };
+            const ca = localStorage.getItem(KEY_CAMIONES);
+            if (ca) camiones = JSON.parse(ca);
+            const cc = localStorage.getItem(KEY_CONT_CAM);
+            if (cc) contadorCamiones = parseInt(cc, 10);
         } catch (err) {
             console.error(err);
         }
@@ -201,7 +201,8 @@
     // ═══════════════════════════════════════════════════════════
     // 6. RUTEO PROFESIONAL HGV
     // ═══════════════════════════════════════════════════════════
-    async function obtenerRutaCamion(cOrigen, cDestino) {
+    async function obtenerRutaCamion(cOrigen, cDestino, camionId) {
+        const camion = camiones.find(c => c.id === camionId);
         const headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
@@ -212,19 +213,22 @@
             coordinates: [
                 [cOrigen[1], cOrigen[0]], // lon, lat
                 [cDestino[1], cDestino[0]]
-            ],
-            options: {
+            ]
+        };
+
+        if (camion) {
+            body.options = {
                 profile_params: {
                     restrictions: {
-                        height: perfilCamion.alto,
-                        width: perfilCamion.ancho,
-                        length: perfilCamion.largo,
-                        weight: perfilCamion.peso,
-                        axleload: Math.round(perfilCamion.peso / 3 * 10) / 10
+                        height: camion.alto,
+                        width: camion.ancho,
+                        length: camion.largo,
+                        weight: camion.peso,
+                        axleload: Math.round(camion.peso / 3 * 10) / 10
                     }
                 }
-            }
-        };
+            };
+        }
 
         const res = await fetch(`${ORS_BASE}/directions/driving-hgv`, {
             method: 'POST',
@@ -266,21 +270,21 @@
         throw new Error('OSRM sin ruta');
     }
 
-    async function resolverRuta(origen, destino) {
+    async function resolverRuta(origen, destino, camionId) {
         const [coordsOrigen, coordsDestino] = await Promise.all([
             geocodificar(origen),
             geocodificar(destino)
         ]);
 
-        if (!coordsOrigen) throw new Error(`Dirección de origen no resuelta.`);
-        if (!coordsDestino) throw new Error(`Dirección de destino no resuelta.`);
+        if (!coordsOrigen) throw new Error(`Direccion de origen no resuelta.`);
+        if (!coordsDestino) throw new Error(`Direccion de destino no resuelta.`);
 
         let dataRuta = null;
         let esAproximada = false;
 
         if (navigator.onLine) {
             try {
-                dataRuta = await obtenerRutaCamion(coordsOrigen, coordsDestino);
+                dataRuta = await obtenerRutaCamion(coordsOrigen, coordsDestino, camionId);
             } catch {
                 try {
                     dataRuta = await obtenerRutaOSRM(coordsOrigen, coordsDestino);
@@ -295,13 +299,13 @@
                 distancia: dist,
                 tiempo: dist / 70,
                 coordenadas: [coordsOrigen, coordsDestino],
-                warnings: ['Sin red: Cálculo en línea recta.']
+                warnings: ['Sin red: Calculo en linea recta.']
             };
             esAproximada = true;
         }
 
         if (esAproximada && navigator.onLine) {
-            showToast('Ruta aproximada por límites de servicio.', 'warning');
+            showToast('Ruta aproximada por limites de servicio.', 'warning');
         }
 
         return {
@@ -563,6 +567,7 @@
         actualizarKPIs();
         renderListaViajes();
         renderMapas();
+        renderSelectCamiones();
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -637,23 +642,47 @@
         }
     }
 
-    // Modal Camión
-    function abrirModalPerfil() {
-        const m = document.getElementById('modal-perfil');
-        if (!m) return;
-        
-        document.getElementById('camion-peso').value = perfilCamion.peso;
-        document.getElementById('camion-alto').value = perfilCamion.alto;
-        document.getElementById('camion-largo').value = perfilCamion.largo;
-        document.getElementById('camion-ancho').value = perfilCamion.ancho;
-        document.getElementById('camion-consumo-vacio').value = perfilCamion.consumoVacio;
-        document.getElementById('camion-consumo-cargado').value = perfilCamion.consumoLleno;
-        
-        m.classList.remove('hidden');
+    function cerrarModalCamion() {
+        document.getElementById('modal-camion')?.classList.add('hidden');
+        camionEditandoId = null;
     }
-    
-    function cerrarModalPerfil() {
-        document.getElementById('modal-perfil')?.classList.add('hidden');
+
+    function renderListaCamiones() {
+        const c = document.getElementById('lista-camiones');
+        if (!c) return;
+
+        if (camiones.length === 0) {
+            c.innerHTML = `<div class="empty-state">
+                <p>No hay camiones registrados. Agrega uno para empezar a asignar rutas.</p>
+            </div>`;
+            return;
+        }
+
+        c.innerHTML = camiones.map(cam => `
+            <div class="camion-card viaje-card pendiente" data-id="${cam.id}" role="button" tabindex="0">
+                <div class="viaje-ruta">
+                    <span>${cam.nombre}</span>
+                </div>
+                <div class="viaje-meta">
+                    <span class="viaje-carga">${cam.peso} tn</span>
+                    <span class="viaje-distancia">${cam.largo}m x ${cam.ancho}m</span>
+                </div>
+                <div class="viaje-meta">
+                    <span class="viaje-carga">Vacio: ${cam.consumoVacio} L/100km</span>
+                    <span class="viaje-distancia">Cargado: ${cam.consumoLleno} L/100km</span>
+                </div>
+                <button class="camion-card-delete" data-id="${cam.id}" aria-label="Eliminar camion" style="position:absolute;top:8px;right:8px;background:none;border:none;color:var(--c-text-muted);cursor:pointer;font-size:1.1rem;">&times;</button>
+            </div>
+        `).join('');
+    }
+
+    function renderSelectCamiones() {
+        const sel = document.getElementById('select-camion');
+        if (!sel) return;
+        const prev = sel.value;
+        sel.innerHTML = '<option value="">-- Seleccionar camion --</option>' +
+            camiones.map(c => `<option value="${c.id}">${c.nombre} (${c.peso} tn)</option>`).join('');
+        if (prev && camiones.some(c => c.id === parseInt(prev))) sel.value = prev;
     }
 
     // Modal Datos del Viaje
@@ -694,8 +723,9 @@
                 e.pesoCarga ? ['Peso', `${e.pesoCarga} tn`] : null,
                 ['Distancia', formatoDistancia(e.distancia)],
                 ['Tiempo estimado', formatoTiempo(e.tiempo)],
-                e.distancia ? ['Consumo estimado', formatoFuel(e.distancia, e.pesoCarga)] : null,
+                e.distancia ? ['Consumo estimado', formatoFuel(e.distancia, e.pesoCarga, e.camionId)] : null,
                 ['Estado', e.estado],
+                e.camionId ? ['Camion', (camiones.find(c => c.id === e.camionId) || {}).nombre || 'N/A'] : null,
                 e.camionero ? ['Camionero', e.camionero] : null,
                 e.celular ? ['Celular', e.celular] : null,
                 e.gmail ? ['Gmail', e.gmail] : null,
@@ -728,6 +758,7 @@
         document.getElementById('producto').value = e.producto;
         document.getElementById('peso-carga').value = e.pesoCarga || '';
         document.getElementById('estado').value = e.estado;
+        document.getElementById('select-camion').value = e.camionId || '';
 
         document.getElementById('form-titulo').textContent = `Editar Ruta #${String(id).padStart(4, '0')}`;
         document.getElementById('btn-submit-texto').textContent = 'Guardar Cambios';
@@ -743,6 +774,7 @@
         document.getElementById('btn-submit-texto').textContent = 'Calcular Mejor Ruta';
         document.getElementById('btn-cancelar-edicion').classList.add('hidden');
         document.getElementById('resultado-ruta')?.classList.add('hidden');
+        renderSelectCamiones();
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -758,9 +790,14 @@
             const producto = document.getElementById('producto').value.trim();
             const pesoCarga = parseFloat(document.getElementById('peso-carga').value) || null;
             const estado = document.getElementById('estado').value;
+            const camionId = parseInt(document.getElementById('select-camion').value) || null;
 
             if (!origen || !destino || !producto) {
-                showToast('Completá origen, destino y carga.', 'error');
+                showToast('Completa origen, destino y carga.', 'error');
+                return;
+            }
+            if (!camionId) {
+                showToast('Selecciona un camion para la ruta.', 'error');
                 return;
             }
 
@@ -773,14 +810,14 @@
             loader.classList.remove('hidden');
 
             try {
-                const dataRuta = await resolverRuta(origen, destino);
+                const dataRuta = await resolverRuta(origen, destino, camionId);
 
                 // Actualizar panel de resultados
                 const resPanel = document.getElementById('resultado-ruta');
                 if (resPanel) {
                     document.getElementById('res-distancia').textContent = formatoDistancia(dataRuta.distancia);
                     document.getElementById('res-tiempo').textContent = formatoTiempo(dataRuta.tiempo);
-                    document.getElementById('res-fuel').textContent = formatoFuel(dataRuta.distancia, pesoCarga) || '—';
+                    document.getElementById('res-fuel').textContent = formatoFuel(dataRuta.distancia, pesoCarga, camionId) || '--';
                     const adv = document.getElementById('res-advertencias');
                     if (dataRuta.warnings.length > 0) {
                         adv.textContent = dataRuta.warnings.join(' · ');
@@ -793,7 +830,7 @@
 
                 if (idEnvioEditando === null) {
                     rutaPendiente = {
-                        origen, destino, producto, pesoCarga, estado,
+                        origen, destino, producto, pesoCarga, estado, camionId,
                         ...dataRuta,
                         fecha: new Date().toISOString()
                     };
@@ -801,7 +838,7 @@
                 } else {
                     const idx = envios.findIndex(x => x.id === idEnvioEditando);
                     if (idx !== -1) {
-                        envios[idx] = { ...envios[idx], origen, destino, producto, pesoCarga, estado, ...dataRuta };
+                        envios[idx] = { ...envios[idx], origen, destino, producto, pesoCarga, estado, camionId, ...dataRuta };
                         abrirModalViaje(envios[idx]);
                     }
                 }
@@ -823,14 +860,45 @@
             btn.addEventListener('click', () => irATab(btn.dataset.tab));
         });
 
-        // Perfil camión
-        const triggersPerfil = [
-            document.getElementById('btn-perfil-camion'),
-            document.getElementById('btn-perfil-camion-mobile')
-        ];
-        triggersPerfil.forEach(btn => btn?.addEventListener('click', abrirModalPerfil));
-        document.getElementById('btn-cerrar-perfil')?.addEventListener('click', cerrarModalPerfil);
-        document.getElementById('btn-cerrar-perfil-2')?.addEventListener('click', cerrarModalPerfil);
+        // Modal Camiones
+        document.getElementById('btn-nuevo-camion')?.addEventListener('click', () => {
+            camionEditandoId = null;
+            document.getElementById('modal-camion-titulo').textContent = 'Nuevo Camion';
+            document.getElementById('form-camion')?.reset();
+            document.getElementById('cam-id').value = '';
+            document.getElementById('modal-camion')?.classList.remove('hidden');
+        });
+        document.getElementById('btn-cerrar-camion')?.addEventListener('click', cerrarModalCamion);
+        document.getElementById('btn-cancelar-camion')?.addEventListener('click', cerrarModalCamion);
+
+        // Lista de camiones (click en card para editar)
+        document.getElementById('lista-camiones')?.addEventListener('click', e => {
+            const card = e.target.closest('.camion-card');
+            if (!card) return;
+            const id = Number(card.dataset.id);
+            const btnDel = e.target.closest('.camion-card-delete');
+            if (btnDel) {
+                camiones = camiones.filter(c => c.id !== id);
+                guardar();
+                renderListaCamiones();
+                renderSelectCamiones();
+                showToast('Camion eliminado.', 'info');
+                return;
+            }
+            const camion = camiones.find(c => c.id === id);
+            if (!camion) return;
+            camionEditandoId = id;
+            document.getElementById('modal-camion-titulo').textContent = 'Editar Camion';
+            document.getElementById('cam-id').value = id;
+            document.getElementById('cam-nombre').value = camion.nombre;
+            document.getElementById('cam-peso').value = camion.peso;
+            document.getElementById('cam-alto').value = camion.alto;
+            document.getElementById('cam-largo').value = camion.largo;
+            document.getElementById('cam-ancho').value = camion.ancho;
+            document.getElementById('cam-cons-vacio').value = camion.consumoVacio;
+            document.getElementById('cam-cons-cargado').value = camion.consumoLleno;
+            document.getElementById('modal-camion')?.classList.remove('hidden');
+        });
 
         // Modal Datos del Viaje
         document.getElementById('btn-cerrar-viaje')?.addEventListener('click', cerrarModalViaje);
@@ -871,21 +939,40 @@
             render();
         });
 
-        document.getElementById('form-perfil')?.addEventListener('submit', e => {
+        document.getElementById('form-camion')?.addEventListener('submit', e => {
             e.preventDefault();
+            const id = document.getElementById('cam-id').value;
+            const nombre = document.getElementById('cam-nombre').value.trim();
             const get = id => parseFloat(document.getElementById(id)?.value) || 0;
-            perfilCamion = {
-                peso:         get('camion-peso') || 20,
-                alto:         get('camion-alto') || 4.0,
-                largo:        get('camion-largo') || 18,
-                ancho:        get('camion-ancho') || 2.5,
-                consumoVacio: get('camion-consumo-vacio') || 25,
-                consumoLleno: get('camion-consumo-cargado') || 38
+
+            if (!nombre) {
+                showToast('Ponle un nombre al camion.', 'error');
+                return;
+            }
+
+            const datos = {
+                nombre,
+                peso:         get('cam-peso') || 20,
+                alto:         get('cam-alto') || 4.0,
+                largo:        get('cam-largo') || 18,
+                ancho:        get('cam-ancho') || 2.5,
+                consumoVacio: get('cam-cons-vacio') || 25,
+                consumoLleno: get('cam-cons-cargado') || 38
             };
-            guardarPerfil();
-            cerrarModalPerfil();
-            showToast('Perfil actualizado.', 'success');
-            render(); // Actualiza consumos calculados
+
+            if (id) {
+                const idx = camiones.findIndex(c => c.id === parseInt(id));
+                if (idx !== -1) camiones[idx] = { ...camiones[idx], ...datos };
+                showToast('Camion actualizado.', 'success');
+            } else {
+                camiones.push({ id: contadorCamiones++, ...datos });
+                showToast('Camion registrado.', 'success');
+            }
+
+            cerrarModalCamion();
+            guardar();
+            renderListaCamiones();
+            renderSelectCamiones();
         });
 
         // Detalle de viaje
@@ -947,8 +1034,9 @@
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', e => {
                 if (e.target === overlay) {
-                    cerrarModalPerfil();
+                    cerrarModalCamion();
                     cerrarDetalle();
+                    cerrarModalViaje();
                 }
             });
         });
@@ -1003,15 +1091,14 @@
         return mm > 0 ? `${hh}h ${mm}min` : `${hh}h`;
     }
 
-    function formatoFuel(km, pesoCarga = 0) {
-        if (!km || !perfilCamion.consumoVacio || !perfilCamion.consumoLleno) return null;
+    function formatoFuel(km, pesoCarga = 0, camionId = null) {
+        const camion = camionId ? camiones.find(c => c.id === camionId) : camiones[0];
+        if (!camion || !km || !camion.consumoVacio || !camion.consumoLleno) return null;
         
-        // Peso relativo al máximo del camión
-        const capMax = perfilCamion.peso || 1;
+        const capMax = camion.peso || 1;
         const cargaRatio = Math.min(1, Math.max(0, (pesoCarga || 0) / capMax));
         
-        // Consumo interpolado por 100km
-        const consumoPor100km = perfilCamion.consumoVacio + (perfilCamion.consumoLleno - perfilCamion.consumoVacio) * cargaRatio;
+        const consumoPor100km = camion.consumoVacio + (camion.consumoLleno - camion.consumoVacio) * cargaRatio;
         
         const litros = Math.round(km * consumoPor100km / 100);
         return `${litros} L`;
@@ -1042,6 +1129,7 @@
         setupAutocompletado('origen', 'sugerencias-origen');
         setupAutocompletado('destino', 'sugerencias-destino');
         bindEvents();
+        renderListaCamiones();
         render();
     }
 
