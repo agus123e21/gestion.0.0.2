@@ -321,6 +321,18 @@ html, body {
     letter-spacing: -0.02em;
 }
 
+.trips-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+.trips-header .section-title {
+    margin: 0;
+    white-space: nowrap;
+}
+
 .field-block {
     display: flex;
     flex-direction: column;
@@ -712,6 +724,8 @@ select.field-input {
     position: relative;
     display: flex;
     align-items: center;
+    flex: 1;
+    max-width: 320px;
 }
 .search-icon {
     position: absolute;
@@ -724,10 +738,10 @@ select.field-input {
     background-color: var(--c-surface);
     border: 1px solid var(--c-border);
     color: var(--c-text-body);
-    border-radius: var(--r-sm);
-    padding: 0.6rem 1rem 0.6rem 2.25rem;
-    font-size: 0.9rem;
-    width: 260px;
+    border-radius: 999px;
+    padding: 0.55rem 1rem 0.55rem 2.25rem;
+    font-size: 0.88rem;
+    width: 100%;
     transition: all var(--t-fast);
 }
 .search-input:focus {
@@ -738,8 +752,7 @@ select.field-input {
 .filter-bar {
     display: flex;
     gap: 0.5rem;
-    margin-top: -0.75rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 .filter-btn {
     background-color: var(--c-surface);
