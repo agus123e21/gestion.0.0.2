@@ -448,7 +448,6 @@
             // Destino
             const mDest = L.marker(e.coordsDestino, { icon: crearIcono(color) }).addTo(instanciaMapa);
             mDest.bindPopup(popupHtml(e));
-            mDest.bindTooltip(`🏁 #${String(e.id).padStart(4,'0')} — ${e.destino}`, { permanent: true, direction: 'top', offset: [0, -14], className: 'map-label map-label-dest' });
             refMarcadores[e.id] = mDest;
             todosCoords.push(e.coordsDestino);
 
@@ -456,17 +455,33 @@
             if (e.coordsOrigen) {
                 const mOr = L.marker(e.coordsOrigen, { icon: crearIconoOrigen() }).addTo(instanciaMapa);
                 mOr.bindPopup(`<div class="popup-titulo" style="color:#10b981">Origen</div><div class="popup-linea">${e.origen}</div>`);
-                mOr.bindTooltip(`🟢 ${e.origen}`, { permanent: true, direction: 'bottom', offset: [0, 14], className: 'map-label map-label-origen' });
                 refMarcadores[`${e.id}_or`] = mOr;
                 todosCoords.push(e.coordsOrigen);
 
                 if (e.coordsRuta?.length > 0) {
-                    const midIdx = Math.floor(e.coordsRuta.length / 2);
-                    const midLabel = L.marker(e.coordsRuta[midIdx], {
-                        icon: L.divIcon({ className: '', html: '', iconSize: [0,0] })
+                    const w = e.estado === 'En Transito' ? 6 : 4;
+                    const polyBorde = L.polyline(e.coordsRuta, {
+                        color: '#ffffff',
+                        weight: w + 5,
+                        opacity: 0.85,
+                        lineCap: 'round',
+                        lineJoin: 'round'
                     }).addTo(instanciaMapa);
-                    midLabel.bindTooltip(`${e.producto || ''} — ${formatoDistancia(e.distancia)}`, { permanent: true, direction: 'center', className: 'map-label map-label-mid' });
-                    refMarcadores[`${e.id}_mid`] = midLabel;
+                    const poly = L.polyline(e.coordsRuta, {
+                        color,
+                        weight: w,
+                        opacity: 1,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                        dashArray: e.estado === 'Pendiente' ? '12, 8' : null
+                    }).addTo(instanciaMapa);
+                    const rutaPopup = `<div class="popup-titulo">Ruta #${String(e.id).padStart(4,'0')}</div>`
+                        + `<div class="popup-linea"><strong>${e.origen}</strong> → <strong>${e.destino}</strong></div>`
+                        + (e.producto ? `<div class="popup-linea">Carga: ${e.producto}</div>` : '')
+                        + (e.distancia ? `<div class="popup-linea">Distancia: ${formatoDistancia(e.distancia)}</div>` : '');
+                    poly.bindPopup(rutaPopup);
+                    polyBorde.bindPopup(rutaPopup);
+                    refPolylines[e.id] = L.featureGroup([polyBorde, poly]);
                 }
 
                 if (e.coordsRuta?.length > 0) {
