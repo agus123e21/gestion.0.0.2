@@ -1089,19 +1089,32 @@ select.field-input {
 
 /* Map route labels */
 .map-label {
-    background: rgba(0, 0, 0, 0.82) !important;
-    color: #f0f0f0 !important;
+    background: rgba(0, 0, 0, 0.88) !important;
+    color: #fff !important;
     border: none !important;
-    border-radius: 6px !important;
-    padding: 4px 10px !important;
-    font-size: 0.78rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.02em !important;
+    border-radius: 8px !important;
+    padding: 6px 14px !important;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.03em !important;
     white-space: nowrap !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.5) !important;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.6) !important;
     pointer-events: none !important;
 }
 .map-label-origen {
-    background: rgba(16, 185, 129, 0.9) !important;
+    background: rgba(16, 185, 129, 0.95) !important;
     color: #fff !important;
+    font-size: 1rem !important;
+}
+.map-label-dest {
+    background: rgba(220, 38, 38, 0.92) !important;
+    color: #fff !important;
+    font-size: 1rem !important;
+}
+.map-label-mid {
+    background: rgba(59, 130, 246, 0.85) !important;
+    color: #fff !important;
+    font-size: 0.82rem !important;
+    border-radius: 20px !important;
+    padding: 4px 12px !important;
 }
