@@ -461,15 +461,23 @@
                 todosCoords.push(e.coordsOrigen);
 
                 if (e.coordsRuta?.length > 0) {
+                    const w = e.estado === 'En Transito' ? 8 : 6;
+                    const polyBorde = L.polyline(e.coordsRuta, {
+                        color: '#ffffff',
+                        weight: w + 6,
+                        opacity: 0.9,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    }).addTo(instanciaMapa);
                     const poly = L.polyline(e.coordsRuta, {
                         color,
-                        weight: e.estado === 'En Transito' ? 7 : 5,
+                        weight: w,
                         opacity: 1,
                         lineCap: 'round',
                         lineJoin: 'round',
-                        dashArray: e.estado === 'Pendiente' ? '12, 8' : null
+                        dashArray: e.estado === 'Pendiente' ? '14, 10' : null
                     }).addTo(instanciaMapa);
-                    refPolylines[e.id] = poly;
+                    refPolylines[e.id] = L.featureGroup([polyBorde, poly]);
                 }
             }
         });
