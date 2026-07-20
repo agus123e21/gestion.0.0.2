@@ -448,6 +448,7 @@
             // Destino
             const mDest = L.marker(e.coordsDestino, { icon: crearIcono(color) }).addTo(instanciaMapa);
             mDest.bindPopup(popupHtml(e));
+            mDest.bindTooltip(`#${String(e.id).padStart(4,'0')} — ${e.destino}`, { permanent: true, direction: 'top', offset: [0, -10], className: 'map-label' });
             refMarcadores[e.id] = mDest;
             todosCoords.push(e.coordsDestino);
 
@@ -455,27 +456,18 @@
             if (e.coordsOrigen) {
                 const mOr = L.marker(e.coordsOrigen, { icon: crearIconoOrigen() }).addTo(instanciaMapa);
                 mOr.bindPopup(`<div class="popup-titulo" style="color:#10b981">Origen</div><div class="popup-linea">${e.origen}</div>`);
+                mOr.bindTooltip(e.origen, { permanent: true, direction: 'bottom', offset: [0, 10], className: 'map-label map-label-origen' });
                 refMarcadores[`${e.id}_or`] = mOr;
                 todosCoords.push(e.coordsOrigen);
 
                 if (e.coordsRuta?.length > 0) {
-                    const w = e.estado === 'En Transito' ? 7 : 5;
-                    const polyBg = L.polyline(e.coordsRuta, {
-                        color: '#000',
-                        weight: w + 4,
-                        opacity: 0.25,
-                        lineCap: 'round',
-                        lineJoin: 'round'
-                    }).addTo(instanciaMapa);
                     const poly = L.polyline(e.coordsRuta, {
                         color,
-                        weight: w,
-                        opacity: 1,
-                        lineCap: 'round',
-                        lineJoin: 'round',
-                        dashArray: e.estado === 'Pendiente' ? '10, 8' : null
+                        weight: e.estado === 'En Transito' ? 5 : 3,
+                        opacity: 0.8,
+                        dashArray: e.estado === 'Pendiente' ? '8, 8' : null
                     }).addTo(instanciaMapa);
-                    refPolylines[e.id] = L.featureGroup([polyBg, poly]);
+                    refPolylines[e.id] = poly;
                 }
             }
         });

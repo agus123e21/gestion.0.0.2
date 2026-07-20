@@ -1086,3 +1086,22 @@ select.field-input {
 .camion-card-delete:hover {
     color: #ef4444 !important;
 }
+
+/* Map route labels */
+.map-label {
+    background: rgba(0, 0, 0, 0.82) !important;
+    color: #f0f0f0 !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 4px 10px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em !important;
+    white-space: nowrap !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5) !important;
+    pointer-events: none !important;
+}
+.map-label-origen {
+    background: rgba(16, 185, 129, 0.9) !important;
+    color: #fff !important;
+}
