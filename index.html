@@ -424,20 +424,12 @@
         </div>
 
         <form id="form-viaje" class="modal-form">
-            <div class="modal-section-title">Camionero</div>
+            <div class="modal-section-title">Asignar a Camion</div>
             <div class="field-block">
-                <label class="field-label" for="vj-camionero">Nombre</label>
-                <input type="text" id="vj-camionero" class="field-input" placeholder="Nombre del camionero" required autocomplete="off">
-            </div>
-            <div class="fields-row">
-                <div class="field-block">
-                    <label class="field-label" for="vj-celular">Celular</label>
-                    <input type="tel" id="vj-celular" class="field-input" placeholder="Ej: 299 123 4567" required inputmode="tel">
-                </div>
-                <div class="field-block">
-                    <label class="field-label" for="vj-gmail">Gmail</label>
-                    <input type="email" id="vj-gmail" class="field-input" placeholder="correo@ejemplo.com" required inputmode="email">
-                </div>
+                <label class="field-label" for="vj-select-camion">Camion</label>
+                <select id="vj-select-camion" class="field-input" required>
+                    <option value="">-- Seleccionar camion --</option>
+                </select>
             </div>
 
             <div class="form-divider"></div>

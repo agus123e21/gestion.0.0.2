@@ -533,7 +533,6 @@
                 e.origen.toLowerCase().includes(q) ||
                 e.destino.toLowerCase().includes(q) ||
                 e.producto.toLowerCase().includes(q) ||
-                (e.camionero && e.camionero.toLowerCase().includes(q)) ||
                 (e.cliente && e.cliente.toLowerCase().includes(q)) ||
                 (e.remito && e.remito.toLowerCase().includes(q))
             );
@@ -691,14 +690,19 @@
         const m = document.getElementById('modal-viaje');
         if (!m) return;
 
+        const vjSel = document.getElementById('vj-select-camion');
+        if (vjSel) {
+            vjSel.innerHTML = '<option value="">-- Seleccionar camion --</option>' +
+                camiones.map(c => `<option value="${c.id}">${c.nombre} ${c.patente ? '(' + c.patente + ')' : ''}</option>`).join('');
+            vjSel.value = envioExistente?.camionId || '';
+        }
+
         if (envioExistente) {
-            document.getElementById('vj-camionero').value = envioExistente.camionero || '';
-            document.getElementById('vj-celular').value = envioExistente.celular || '';
-            document.getElementById('vj-gmail').value = envioExistente.gmail || '';
             document.getElementById('vj-cliente').value = envioExistente.cliente || '';
             document.getElementById('vj-remito').value = envioExistente.remito || '';
         } else {
             document.getElementById('form-viaje')?.reset();
+            if (vjSel) vjSel.value = '';
         }
 
         m.classList.remove('hidden');
@@ -726,11 +730,7 @@
                 ['Tiempo estimado', formatoTiempo(e.tiempo)],
                 e.distancia ? ['Consumo estimado', formatoFuel(e.distancia, e.pesoCarga, e.camionId)] : null,
                 ['Estado', e.estado],
-                e.camionId ? ['Camion', (camiones.find(c => c.id === e.camionId) || {}).nombre || 'N/A'] : null,
-                e.camionId ? ['Patente', (camiones.find(c => c.id === e.camionId) || {}).patente || 'N/A'] : null,
-                e.camionero ? ['Camionero', e.camionero] : null,
-                e.celular ? ['Celular', e.celular] : null,
-                e.gmail ? ['Gmail', e.gmail] : null,
+                e.camionId ? ['Camion', `${(camiones.find(c => c.id === e.camionId) || {}).nombre || 'N/A'} ${(camiones.find(c => c.id === e.camionId) || {}).patente ? '(' + (camiones.find(c => c.id === e.camionId)).patente + ')' : ''}`] : ['Camion', '<em style="opacity:0.5">Sin asignar</em> <button id="btn-detalle-asignar-camion" class="btn-link" style="margin-left:6px">Asignar</button>'],
                 e.cliente ? ['Cliente', e.cliente] : null,
                 e.remito ? ['N° Remito', e.remito] : null
             ].filter(Boolean).map(([k, v]) => 
@@ -738,7 +738,7 @@
                     <span class="detail-key">${k}</span>
                     <span class="detail-val">${v}</span>
                 </div>`
-            ).join('');
+            ).join('') + `<div style="text-align:center;margin-top:12px"><button id="btn-detalle-cambiar-camion" class="btn-link" style="font-size:0.85rem">Cambiar camion</button></div>`;
         }
 
         document.getElementById('modal-detalle')?.classList.remove('hidden');
@@ -909,18 +909,16 @@
 
         document.getElementById('form-viaje')?.addEventListener('submit', e => {
             e.preventDefault();
-            const camionero = document.getElementById('vj-camionero').value.trim();
-            const celular = document.getElementById('vj-celular').value.trim();
-            const gmail = document.getElementById('vj-gmail').value.trim();
             const cliente = document.getElementById('vj-cliente').value.trim();
             const remito = document.getElementById('vj-remito').value.trim();
+            const camionId = parseInt(document.getElementById('vj-select-camion')?.value) || null;
 
-            if (!camionero || !celular || !gmail || !cliente || !remito) {
-                showToast('Completá todos los campos del viaje.', 'error');
+            if (!cliente || !remito) {
+                showToast('Completá cliente y remito.', 'error');
                 return;
             }
 
-            const datosExtra = { camionero, celular, gmail, cliente, remito };
+            const datosExtra = { cliente, remito, camionId };
 
             if (idEnvioEditando !== null) {
                 const idx = envios.findIndex(x => x.id === idEnvioEditando);
@@ -1018,6 +1016,31 @@
             render();
             cerrarDetalle();
             showToast('Ruta eliminada.', 'warning');
+        });
+
+        document.getElementById('detalle-contenido')?.addEventListener('click', e => {
+            if (e.target.id === 'btn-detalle-cambiar-camion' || e.target.id === 'btn-detalle-asignar-camion') {
+                if (idEnvioDetalle === null) return;
+                const envio = envios.find(x => x.id === idEnvioDetalle);
+                if (!envio) return;
+                e.target.outerHTML = `<select id="vj-cambiar-camion-inline" class="field-input" style="margin-top:4px;font-size:0.85rem">
+                    ${camiones.map(c => `<option value="${c.id}" ${c.id === envio.camionId ? 'selected' : ''}>${c.nombre} ${c.patente ? '(' + c.patente + ')' : ''}</option>`).join('')}
+                </select>`;
+                const sel = document.getElementById('vj-cambiar-camion-inline');
+                sel?.focus();
+                const aplicar = () => {
+                    const nuevoId = parseInt(sel.value);
+                    if (nuevoId && nuevoId !== envio.camionId) {
+                        envio.camionId = nuevoId;
+                        guardar();
+                        render();
+                        showToast(`Camion cambiado a ${(camiones.find(c => c.id === nuevoId) || {}).nombre}.`, 'success');
+                    }
+                    abrirDetalle(idEnvioDetalle);
+                };
+                sel?.addEventListener('change', aplicar);
+                sel?.addEventListener('blur', () => { setTimeout(() => { if (document.getElementById('vj-cambiar-camion-inline')) abrirDetalle(idEnvioDetalle); }, 150); });
+            }
         });
 
         // Filtro & Búsqueda
@@ -1136,6 +1159,8 @@
         bindEvents();
         renderListaCamiones();
         render();
+
+        if (camiones.length === 0) irATab('camiones');
     }
 
     if (document.readyState === 'loading') {
