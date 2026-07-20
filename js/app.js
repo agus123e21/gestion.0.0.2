@@ -463,9 +463,11 @@
                 if (e.coordsRuta?.length > 0) {
                     const poly = L.polyline(e.coordsRuta, {
                         color,
-                        weight: e.estado === 'En Transito' ? 5 : 3,
-                        opacity: 0.8,
-                        dashArray: e.estado === 'Pendiente' ? '8, 8' : null
+                        weight: e.estado === 'En Transito' ? 7 : 5,
+                        opacity: 1,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                        dashArray: e.estado === 'Pendiente' ? '12, 8' : null
                     }).addTo(instanciaMapa);
                     refPolylines[e.id] = poly;
                 }
