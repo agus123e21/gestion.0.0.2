@@ -246,6 +246,7 @@
                 distancia: r.summary.distance / 1000,
                 tiempo: r.summary.duration / 3600,
                 coordenadas: decodificarPolyline(r.geometry),
+                calles: [],
                 warnings: (r.warnings || []).map(w => w.message || w)
             };
         }
@@ -253,17 +254,26 @@
     }
 
     async function obtenerRutaOSRM(cOrigen, cDestino) {
-        const url = `https://router.project-osrm.org/route/v1/driving/${cOrigen[1]},${cOrigen[0]};${cDestino[1]},${cDestino[0]}?overview=full&geometries=geojson`;
+        const url = `https://router.project-osrm.org/route/v1/driving/${cOrigen[1]},${cOrigen[0]};${cDestino[1]},${cDestino[0]}?overview=full&geometries=geojson&steps=true`;
         const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
         if (!res.ok) throw new Error('OSRM_ERROR');
         const data = await res.json();
 
         if (data.code === 'Ok' && data.routes?.length > 0) {
             const r = data.routes[0];
+            const calles = [];
+            const legs = r.legs || [];
+            legs.forEach(leg => {
+                (leg.steps || []).forEach(step => {
+                    const name = step.name && step.name.trim();
+                    if (name && !calles.includes(name)) calles.push(name);
+                });
+            });
             return {
                 distancia: r.distance / 1000,
                 tiempo: r.duration / 3600,
                 coordenadas: r.geometry.coordinates.map(c => [c[1], c[0]]),
+                calles,
                 warnings: []
             };
         }
@@ -314,6 +324,7 @@
             distancia: dataRuta.distancia,
             tiempo: dataRuta.tiempo,
             coordsRuta: dataRuta.coordenadas,
+            calles: dataRuta.calles || [],
             warnings: dataRuta.warnings || []
         };
     }
@@ -470,7 +481,8 @@
                     const rutaPopup = `<div class="popup-titulo">Ruta #${String(e.id).padStart(4,'0')}</div>`
                         + `<div class="popup-linea"><strong>${e.origen}</strong> → <strong>${e.destino}</strong></div>`
                         + (e.producto ? `<div class="popup-linea">Carga: ${e.producto}</div>` : '')
-                        + (e.distancia ? `<div class="popup-linea">Distancia: ${formatoDistancia(e.distancia)}</div>` : '');
+                        + (e.distancia ? `<div class="popup-linea">Distancia: ${formatoDistancia(e.distancia)}</div>` : '')
+                        + (e.calles?.length ? `<div class="popup-linea" style="margin-top:6px;font-size:0.8rem;opacity:0.85"><strong>Ruta por:</strong><br>${e.calles.join(' → ')}</div>` : '');
                     poly.bindPopup(rutaPopup);
                     refPolylines[e.id] = poly;
                 }
@@ -741,7 +753,8 @@
                 e.camionId ? ['Camion', `${(camiones.find(c => c.id === e.camionId) || {}).nombre || 'N/A'} ${(camiones.find(c => c.id === e.camionId) || {}).patente ? '(' + (camiones.find(c => c.id === e.camionId)).patente + ')' : ''}`] : ['Camion', '<em style="opacity:0.5">Sin asignar</em> <button id="btn-detalle-asignar-camion" class="btn-link" style="margin-left:6px">Asignar</button>'],
                 e.camionId && (camiones.find(c => c.id === e.camionId) || {}).camionero ? ['Camionero', (camiones.find(c => c.id === e.camionId)).camionero] : null,
                 e.cliente ? ['Cliente', e.cliente] : null,
-                e.remito ? ['N° Remito', e.remito] : null
+                e.remito ? ['N° Remito', e.remito] : null,
+                e.calles?.length ? ['Ruta por', e.calles.join(' → ')] : null
             ].filter(Boolean).map(([k, v]) => 
                 `<div class="detail-row">
                     <span class="detail-key">${k}</span>
