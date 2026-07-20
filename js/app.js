@@ -1252,15 +1252,11 @@
 </body>
 </html>`;
 
-        const blob = new Blob([html], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `comprobante-ruta-${String(e.id).padStart(4,'0')}.html`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        const win = window.open('', '_blank');
+        if (win) {
+            win.document.write(html);
+            win.document.close();
+        }
     }
 
     // ═══════════════════════════════════════════════════════════
