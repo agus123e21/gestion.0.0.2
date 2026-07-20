@@ -567,6 +567,7 @@
 
         c.innerHTML = lista.map(e => {
             const clase = e.estado === 'Pendiente' ? 'pendiente' : e.estado === 'En Transito' ? 'transito' : 'entregado';
+            const camion = e.camionId ? camiones.find(c => c.id === e.camionId) : null;
             return `<div class="viaje-card ${clase}" data-id="${e.id}" role="button" tabindex="0">
                 <div class="viaje-ruta">
                     <span>${e.origen.split(',')[0]}</span>
@@ -577,6 +578,13 @@
                     <span class="viaje-carga">${e.producto}</span>
                     <span class="viaje-distancia">${formatoDistancia(e.distancia)}</span>
                 </div>
+                <button class="btn-download" data-id="${e.id}" title="Descargar comprobante" onclick="event.stopPropagation()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                </button>
             </div>`;
         }).join('');
     }
@@ -1004,6 +1012,12 @@
 
         // Detalle de viaje
         document.getElementById('lista-viajes')?.addEventListener('click', e => {
+            const dlBtn = e.target.closest('.btn-download');
+            if (dlBtn) {
+                e.stopPropagation();
+                generarComprobante(Number(dlBtn.dataset.id));
+                return;
+            }
             const card = e.target.closest('.viaje-card');
             if (card) abrirDetalle(Number(card.dataset.id));
         });
@@ -1169,6 +1183,83 @@
             t.style.transition = 'all 0.25s ease';
             setTimeout(() => t.remove(), 250);
         }, 3500);
+    }
+
+    function generarComprobante(id) {
+        const e = envios.find(x => x.id === id);
+        if (!e) return;
+        const camion = e.camionId ? camiones.find(c => c.id === e.camionId) : null;
+        const now = new Date();
+        const fecha = now.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const hora = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+        const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Comprobante Ruta #${String(e.id).padStart(4,'0')}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; color: #1e293b; padding: 2rem; }
+  .comprobante { max-width: 700px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 16px rgba(0,0,0,0.08); overflow: hidden; }
+  .header { background: #0f172a; color: #fff; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 1.3rem; font-weight: 700; }
+  .header .fecha { font-size: 0.85rem; opacity: 0.8; }
+  .body { padding: 1.5rem 2rem; }
+  .row { display: flex; padding: 0.6rem 0; border-bottom: 1px solid #e2e8f0; }
+  .row:last-child { border-bottom: none; }
+  .key { width: 140px; font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; padding-top: 2px; }
+  .val { flex: 1; font-size: 0.95rem; color: #1e293b; }
+  .section { font-size: 0.85rem; font-weight: 700; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.05em; padding: 1rem 0 0.3rem; border-bottom: 2px solid #3b82f6; margin-top: 0.5rem; }
+  .estado { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; }
+  .estado.pendiente { background: #fef3c7; color: #92400e; }
+  .estado.transito { background: #dbeafe; color: #1e40af; }
+  .estado.entregado { background: #d1fae5; color: #065f46; }
+  .rutas { background: #f1f5f9; border-radius: 8px; padding: 1rem; margin-top: 0.5rem; font-size: 0.85rem; line-height: 1.6; color: #475569; }
+  .footer { text-align: center; padding: 1rem 2rem; background: #f8fafc; font-size: 0.75rem; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+  @media print { body { padding: 0; background: #fff; } .comprobante { box-shadow: none; border-radius: 0; } }
+</style>
+</head>
+<body>
+<div class="comprobante">
+  <div class="header">
+    <h1>Comprobante Ruta #${String(e.id).padStart(4,'0')}</h1>
+    <div class="fecha">${fecha} ${hora}</div>
+  </div>
+  <div class="body">
+    <div class="section">Datos del viaje</div>
+    <div class="row"><div class="key">Origen</div><div class="val">${e.origen}</div></div>
+    <div class="row"><div class="key">Destino</div><div class="val">${e.destino}</div></div>
+    <div class="row"><div class="key">Carga</div><div class="val">${e.producto || '—'}</div></div>
+    ${e.pesoCarga ? `<div class="row"><div class="key">Peso</div><div class="val">${e.pesoCarga} tn</div></div>` : ''}
+    <div class="row"><div class="key">Distancia</div><div class="val">${formatoDistancia(e.distancia)}</div></div>
+    <div class="row"><div class="key">Tiempo est.</div><div class="val">${formatoTiempo(e.tiempo)}</div></div>
+    <div class="row"><div class="key">Estado</div><div class="val"><span class="estado ${e.estado === 'Pendiente' ? 'pendiente' : e.estado === 'En Transito' ? 'transito' : 'entregado'}">${e.estado}</span></div></div>
+
+    ${camion ? `<div class="section">Camion asignado</div>
+    <div class="row"><div class="key">Nombre</div><div class="val">${camion.nombre}</div></div>
+    ${camion.patente ? `<div class="row"><div class="key">Patente</div><div class="val">${camion.patente}</div></div>` : ''}
+    ${camion.camionero ? `<div class="row"><div class="key">Camionero</div><div class="val">${camion.camionero}</div></div>` : ''}` : ''}
+
+    ${e.cliente || e.remito ? `<div class="section">Cliente</div>
+    ${e.cliente ? `<div class="row"><div class="key">Cliente</div><div class="val">${e.cliente}</div></div>` : ''}
+    ${e.remito ? `<div class="row"><div class="key">Remito</div><div class="val">${e.remito}</div></div>` : ''}` : ''}
+
+    ${e.calles?.length ? `<div class="section">Ruta</div><div class="rutas">${e.calles.join(' → ')}</div>` : ''}
+  </div>
+  <div class="footer">Generado por TerMate — ${fecha} ${hora}</div>
+</div>
+</body>
+</html>`;
+
+        const blob = new Blob([html], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const win = window.open(url, '_blank');
+        if (win) {
+            win.addEventListener('load', () => {
+                setTimeout(() => { win.print(); }, 400);
+            });
+        }
     }
 
     // ═══════════════════════════════════════════════════════════
