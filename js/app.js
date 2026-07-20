@@ -470,7 +470,23 @@
                 }
 
                 if (e.coordsRuta?.length > 0) {
-                    refPolylines[e.id] = L.featureGroup().addTo(instanciaMapa);
+                    const w = e.estado === 'En Transito' ? 6 : 4;
+                    const polyBorde = L.polyline(e.coordsRuta, {
+                        color: '#ffffff',
+                        weight: w + 5,
+                        opacity: 0.85,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    }).addTo(instanciaMapa);
+                    const poly = L.polyline(e.coordsRuta, {
+                        color,
+                        weight: w,
+                        opacity: 1,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                        dashArray: e.estado === 'Pendiente' ? '12, 8' : null
+                    }).addTo(instanciaMapa);
+                    refPolylines[e.id] = L.featureGroup([polyBorde, poly]);
                 }
             }
         });
